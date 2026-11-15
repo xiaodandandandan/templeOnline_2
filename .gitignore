@@ -1,0 +1,26 @@
+# 依赖
+node_modules/
+
+# 构建产物（可由 python build.py + npm run build 重建）
+jingshan-worship/dist/
+jingshan-worship/public/temple/
+coverage/
+
+# 环境与本地文件
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
+
+# 打包分发物
+jingshan-worship-source.zip
+
+# 截图与预览图：均为过程产物，不入库（本地保留，需要时重跑截图脚本生成）
+*.png
+
+# 大型二进制模型：用 node _tools/render.mjs 从场景重新导出
+*.glb
+
+# 工作区本地数据（聊天记忆 / 缓存），不入库
+.workbuddy/
