@@ -1,113 +1,158 @@
 # -*- coding: utf-8 -*-
-"""在既有「山門殿」页面基线上扩展为全寺中轴场景，生成单文件 index.html。
-   只替换与需求相关的片段；three.js / OrbitControls / GLTFExporter 内联库原样保留。"""
-import io, os, re, glob, sys
+"""组装单文件 index.html（离线、双击即开）。
+
+源码按职责分离，产物才合并：
+    vendor/      three.js r160 与官方 addons（OrbitControls / GLTFExporter）原样存放
+    src/         页面模板 page.template.html + 自研代码 scene.js / extension.js
+    index.html   构建产物（内联全部依赖），已 gitignore
+
+用法:
+    python build.py
+"""
+import io, os, re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HERE)
-BASE = glob.glob(os.path.join(ROOT, '_baseline', '*.html'))[0]
+
+VENDOR_PARTS = [
+    'vendor/three.module.js',    # r160 引擎本体
+    'vendor/three-namespace.js',  # THREE 命名空间映射
+    'vendor/OrbitControls.js',    # 官方 addons
+    'vendor/GLTFExporter.js',     # 官方 addons
+    'vendor/three-shim.js',       # addons 的 IIFE 结果取出
+]
+TPL = os.path.join(HERE, 'src/page.template.html')
+SCENE = os.path.join(HERE, 'src/scene.js')
+EXT = os.path.join(HERE, 'src/extension.js')
 OUT = os.path.join(HERE, 'index.html')
 
-s = io.open(BASE, encoding='utf-8').read()
-ext = io.open(os.path.join(HERE, 'extension.js'), encoding='utf-8').read()
-
-# 资料库页面注入脚本在本地单文件场景里无对应路径，直接移除以免 404 噪声
-s = re.sub(r'<script[^>]*src="/page/page_comm/inject\.js"[^>]*></script>\s*', '', s, count=1)
+PLACEHOLDER = '/*__VENDOR__*//*__APP__*/'
 
 
-def rep(old, new, label):
-    global s
-    if old not in s:
+def read(path):
+    return io.open(path, encoding='utf-8').read()
+
+
+HTML = read(TPL)
+SCEN = read(SCENE)
+EXTJS = read(EXT)
+
+
+def _rep(doc, old, new, label):
+    if old not in doc:
         raise SystemExit('MISS: ' + label)
-    if s.count(old) != 1:
-        raise SystemExit('NOT UNIQUE: ' + label + ' (%d)' % s.count(old))
-    s = s.replace(old, new, 1)
+    if doc.count(old) != 1:
+        raise SystemExit('NOT UNIQUE: %s (%d)' % (label, doc.count(old)))
     print('OK  ', label)
+    return doc.replace(old, new, 1)
 
 
-def rep_re(pattern, new, label, flags=re.S):
-    global s
-    s2, n = re.subn(pattern, new, s, count=1, flags=flags)
+def _re(doc, pattern, new, label, flags=re.S):
+    d2, n = re.subn(pattern, new, doc, count=1, flags=flags)
     if n != 1:
         raise SystemExit('MISS REGEX: ' + label)
-    s = s2
     print('OK  ', label)
+    return d2
 
+
+def H(old, new, label):
+    """替换页面模板中的片段"""
+    global HTML
+    HTML = _rep(HTML, old, new, label)
+
+
+def Sc(old, new, label):
+    """替换场景代码中的片段"""
+    global SCEN
+    SCEN = _rep(SCEN, old, new, label)
+
+
+def Hre(pattern, new, label):
+    global HTML
+    HTML = _re(HTML, pattern, new, label)
+
+
+def Scre(pattern, new, label):
+    global SCEN
+    SCEN = _re(SCEN, pattern, new, label)
+
+
+# ---- 0. 资料库注入脚本在本地单文件里无对应路径，移除以免 404 噪声 ----
+Hre(r'<script[^>]*src="/page/page_comm/inject\.js"[^>]*></script>\s*', '', 'strip-inject')
 
 # ---- 1. 标题 / 说明 ----
-rep('<title data-page-node-id="Al8fWxrLrSiDBwuu38pCoh" data-pnid-children="Q05kxXqiFCRsrEzGjNzu36">'
-    '徑山萬壽禪寺 · 山門殿 | Three.js 程序化 3D 复原</title>',
-    '<title data-page-node-id="Al8fWxrLrSiDBwuu38pCoh" data-pnid-children="Q05kxXqiFCRsrEzGjNzu36">'
-    '徑山萬壽禪寺 · 依遊覽圖全寺布局 | Three.js 程序化 3D 复原</title>', 'title')
+H('<title data-page-node-id="Al8fWxrLrSiDBwuu38pCoh" data-pnid-children="Q05kxXqiFCRsrEzGjNzu36">'
+  '徑山萬壽禪寺 · 山門殿 | Three.js 程序化 3D 复原</title>',
+  '<title data-page-node-id="Al8fWxrLrSiDBwuu38pCoh" data-pnid-children="Q05kxXqiFCRsrEzGjNzu36">'
+  '徑山萬壽禪寺 · 依遊覽圖全寺布局 | Three.js 程序化 3D 复原</title>', 'title')
 
-rep('<h1 data-page-node-id="PUgT0FoGDt8lhP8bErILlB"><!--pnid:WZowZEwoMa2KsjxeiWdRKA-->徑山萬壽禪寺 · 山門殿\n'
-    '    <small data-page-node-id="C43ODg4nmAt0Zq31z1qJkm"><!--pnid:1vyLSRe7vSq0s0hEHRUbrO-->基于照片的程序化三维复原</small>\n'
-    '  </h1>',
-    '<h1 data-page-node-id="PUgT0FoGDt8lhP8bErILlB"><!--pnid:WZowZEwoMa2KsjxeiWdRKA-->徑山萬壽禪寺 · 遊覽圖布局\n'
-    '    <small data-page-node-id="C43ODg4nmAt0Zq31z1qJkm"><!--pnid:1vyLSRe7vSq0s0hEHRUbrO-->依《徑山寺遊覽全攻略》航拍標注重排</small>\n'
-    '  </h1>', 'h1')
+H('<h1 data-page-node-id="PUgT0FoGDt8lhP8bErILlB"><!--pnid:WZowZEwoMa2KsjxeiWdRKA-->徑山萬壽禪寺 · 山門殿\n'
+  '    <small data-page-node-id="C43ODg4nmAt0Zq31z1qJkm"><!--pnid:1vyLSRe7vSq0s0hEHRUbrO-->基于照片的程序化三维复原</small>\n'
+  '  </h1>',
+  '<h1 data-page-node-id="PUgT0FoGDt8lhP8bErILlB"><!--pnid:WZowZEwoMa2KsjxeiWdRKA-->徑山萬壽禪寺 · 遊覽圖布局\n'
+  '    <small data-page-node-id="C43ODg4nmAt0Zq31z1qJkm"><!--pnid:1vyLSRe7vSq0s0hEHRUbrO-->依《徑山寺遊覽全攻略》航拍標注重排</small>\n'
+  '  </h1>', 'h1')
 
-rep_re(r'(<div data-page-node-id="Z2MZwSo29N0w6y7zppoE9O" class="desc">).*?(</div>)',
-       r'\1\n'
-       '    依航拍圖由南向北：請香處 → 進口 → 五鳳山門(1)<br>\n'
-       '    山門內供彌勒、韋陀，兼天王殿之制<br>\n'
-       '    <b>中軸五殿等距 44</b>，殿距全部拉齊<br>\n'
-       '    0 / -44 / -88 / -132 / -176，進深 176<br>\n'
-       '    兩側<b>深栗木兩層樓閣</b>：密直棂窗 · 無紅欄<br>\n'
-       '    金匾楹聯 · 瓦當腰檐，一層<b>齊平</b><br>\n'
-       '    廊兩端折入院內，<b>不直抵殿門</b><br>\n'
-       '    朱牆院門 · 錦鯉池 · 踏道登 +6 高台<br>\n'
-       '    室內：金色主尊、壁畫背屏、成排蒲團<br>\n'
-       '    <b>方塊人物</b>漫游：WASD 拖曳 滾輪 跪拜\n'
-       r'\2', 'desc')
+Hre(r'(<div data-page-node-id="Z2MZwSo29N0w6y7zppoE9O" class="desc">).*?(</div>)',
+    r'\1\n'
+    '    依航拍圖由南向北：請香處 → 進口 → 五鳳山門(1)<br>\n'
+    '    山門內供彌勒、韋陀，兼天王殿之制<br>\n'
+    '    <b>中軸五殿等距 44</b>，殿距全部拉齊<br>\n'
+    '    0 / -44 / -88 / -132 / -176，進深 176<br>\n'
+    '    兩側<b>深栗木兩層樓閣</b>：密直棂窗 · 無紅欄<br>\n'
+    '    金匾楹聯 · 瓦當腰檐，一層<b>齊平</b><br>\n'
+    '    廊兩端折入院內，<b>不直抵殿門</b><br>\n'
+    '    朱牆院門 · 錦鯉池 · 踏道登 +6 高台<br>\n'
+    '    室內：金色主尊、壁畫背屏、成排蒲團<br>\n'
+    '    <b>方塊人物</b>漫游：WASD 拖曳 滾輪 跪拜\n'
+    r'\2', 'desc')
 
 # ---- 1b. 山门匾额依航拍图改题「五鳳山門」 ----
-rep("const plaqueMain = textPlate(['萬年正續'], { w: 640, h: 150, size: 92 });",
-    "const plaqueMain = textPlate(['五鳳山門'], { w: 640, h: 150, size: 86 });", 'plaque-main')
+Sc("const plaqueMain = textPlate(['萬年正續'], { w: 640, h: 150, size: 92 });",
+   "const plaqueMain = textPlate(['五鳳山門'], { w: 640, h: 150, size: 86 });", 'plaque-main')
 
 # ---- 2. 视角按钮 ----
-rep('<button data-page-node-id="oS09ud3m9WO97bbrMRvV3L" data-view="top"><!--pnid:YRFjnKI5b65akXyeWcfR4y-->俯瞰</button>',
-    '<button data-page-node-id="oS09ud3m9WO97bbrMRvV3L" data-view="top"><!--pnid:YRFjnKI5b65akXyeWcfR4y-->全寺俯瞰</button>', 'view-top-label')
+H('<button data-page-node-id="oS09ud3m9WO97bbrMRvV3L" data-view="top"><!--pnid:YRFjnKI5b65akXyeWcfR4y-->俯瞰</button>',
+  '<button data-page-node-id="oS09ud3m9WO97bbrMRvV3L" data-view="top"><!--pnid:YRFjnKI5b65akXyeWcfR4y-->全寺俯瞰</button>', 'view-top-label')
 
-rep('<button data-page-node-id="HNlH7n7GaHiAJKabeU1mbu" data-view="close"><!--pnid:dqEvB2bxwQ4m2BFXBHWQGz-->近景</button>',
-    '<button data-page-node-id="HNlH7n7GaHiAJKabeU1mbu" data-view="close"><!--pnid:dqEvB2bxwQ4m2BFXBHWQGz-->近景</button>\n'
-    '  <button data-view="axis">中軸全景</button>', 'view-axis-button')
+H('<button data-page-node-id="HNlH7n7GaHiAJKabeU1mbu" data-view="close"><!--pnid:dqEvB2bxwQ4m2BFXBHWQGz-->近景</button>',
+  '<button data-page-node-id="HNlH7n7GaHiAJKabeU1mbu" data-view="close"><!--pnid:dqEvB2bxwQ4m2BFXBHWQGz-->近景</button>\n'
+  '  <button data-view="axis">中軸全景</button>', 'view-axis-button')
 
 # ---- 3. 雾 / 阴影 / 相机（等距重排后全寺纵深约 208 单位，拉远可览全貌） ----
-rep('scene.fog = new T.Fog(0xcfe3f0, 78, 230);', 'scene.fog = new T.Fog(0xcfe3f0, 620, 1500);', 'fog')
-rep('sun.shadow.camera.left = -42; sun.shadow.camera.right = 42;',
-    'sun.shadow.camera.left = -120; sun.shadow.camera.right = 120;', 'shadow-x')
-rep('sun.shadow.camera.top = 34; sun.shadow.camera.bottom = -30;',
-    'sun.shadow.camera.top = 150; sun.shadow.camera.bottom = -150;', 'shadow-y')
-rep('sun.shadow.camera.near = 1; sun.shadow.camera.far = 130;',
-    'sun.shadow.camera.near = 1; sun.shadow.camera.far = 480;', 'shadow-far')
-rep('const camera = new T.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 600);',
-    'const camera = new T.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 2000);', 'camera-far')
-rep('camera.position.set(0, 8.8, 36);', 'camera.position.set(52, 150, 122);', 'camera-default')
-rep('controls.target.set(0, 6.0, 0);', 'controls.target.set(0, 3.0, -88);', 'target-default')
-rep('controls.minDistance = 12; controls.maxDistance = 110;',
-    'controls.minDistance = 12; controls.maxDistance = 900;', 'controls-distance')
+Sc('scene.fog = new T.Fog(0xcfe3f0, 78, 230);', 'scene.fog = new T.Fog(0xcfe3f0, 620, 1500);', 'fog')
+Sc('sun.shadow.camera.left = -42; sun.shadow.camera.right = 42;',
+   'sun.shadow.camera.left = -120; sun.shadow.camera.right = 120;', 'shadow-x')
+Sc('sun.shadow.camera.top = 34; sun.shadow.camera.bottom = -30;',
+   'sun.shadow.camera.top = 150; sun.shadow.camera.bottom = -150;', 'shadow-y')
+Sc('sun.shadow.camera.near = 1; sun.shadow.camera.far = 130;',
+   'sun.shadow.camera.near = 1; sun.shadow.camera.far = 480;', 'shadow-far')
+Sc('const camera = new T.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 600);',
+   'const camera = new T.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 2000);', 'camera-far')
+Sc('camera.position.set(0, 8.8, 36);', 'camera.position.set(52, 150, 122);', 'camera-default')
+Sc('controls.target.set(0, 6.0, 0);', 'controls.target.set(0, 3.0, -88);', 'target-default')
+Sc('controls.minDistance = 12; controls.maxDistance = 110;',
+   'controls.minDistance = 12; controls.maxDistance = 900;', 'controls-distance')
 
 # ---- 3a. 两株古杉移到山门两侧，避免正对横匾与中央券门 ----
-rep("natureRoot.add(makeCedar(-2.75, 6.6, 15.0, 0.86));\nnatureRoot.add(makeCedar(2.80, 6.3, 15.6, 0.90));",
-    "natureRoot.add(makeCedar(-8.60, 7.2, 15.0, 0.86));\nnatureRoot.add(makeCedar(8.60, 7.0, 15.6, 0.90));", 'cedar-offset')
+Sc("natureRoot.add(makeCedar(-2.75, 6.6, 15.0, 0.86));\nnatureRoot.add(makeCedar(2.80, 6.3, 15.6, 0.90));",
+   "natureRoot.add(makeCedar(-8.60, 7.2, 15.0, 0.86));\nnatureRoot.add(makeCedar(8.60, 7.0, 15.6, 0.90));", 'cedar-offset')
 
 # ---- 3b. 地面覆盖全寺（原 260×260 会露边） ----
-rep("const paveSquare = paving('#cfc9bb', '#a9a394', 6, 6, 26, 26);",
-    "const paveSquare = paving('#cfc9bb', '#a9a394', 6, 6, 90, 90);", 'pave-repeat')
-rep('const base = makeMesh(new T.PlaneGeometry(260, 260),',
-    'const base = makeMesh(new T.PlaneGeometry(900, 900),', 'ground-size')
-rep("new T.MeshStandardMaterial({ map: paveSquare, color: 0xffffff, roughness: 1 }), 0, -0.03, 0, false);",
-    "new T.MeshStandardMaterial({ map: paveSquare, color: 0xffffff, roughness: 1 }), 0, -0.03, -88, false);", 'ground-center')
+Sc("const paveSquare = paving('#cfc9bb', '#a9a394', 6, 6, 26, 26);",
+   "const paveSquare = paving('#cfc9bb', '#a9a394', 6, 6, 90, 90);", 'pave-repeat')
+Sc('const base = makeMesh(new T.PlaneGeometry(260, 260),',
+   'const base = makeMesh(new T.PlaneGeometry(900, 900),', 'ground-size')
+Sc("new T.MeshStandardMaterial({ map: paveSquare, color: 0xffffff, roughness: 1 }), 0, -0.03, 0, false);",
+   "new T.MeshStandardMaterial({ map: paveSquare, color: 0xffffff, roughness: 1 }), 0, -0.03, -88, false);", 'ground-center')
 
 # ---- 4. 视角表 ----
-rep("""const views = {
+Sc("""const views = {
   front:  { p: new T.Vector3(0, 8.8, 36),   t: new T.Vector3(0, 6.0, 0) },
   angle:  { p: new T.Vector3(-25, 12.5, 29),t: new T.Vector3(0, 5.6, 0) },
   top:    { p: new T.Vector3(2, 38, 30),    t: new T.Vector3(0, 2.0, 0) },
   close:  { p: new T.Vector3(0, 5.4, 18),   t: new T.Vector3(0, 5.0, 0) },
 };""",
-    """const views = {
+   """const views = {
   front:  { p: new T.Vector3(0, 8.0, 22),    t: new T.Vector3(0, 6.2, 0) },
   angle:  { p: new T.Vector3(-25, 12.5, 29), t: new T.Vector3(0, 5.6, 0) },
   top:    { p: new T.Vector3(0, 420, 14),    t: new T.Vector3(0, 0, -88) },
@@ -127,8 +172,8 @@ rep("""const views = {
 };""", 'views')
 
 # ---- 5. 构件标注：补殿名（按抬高后的檐口高度调整） ----
-rep("  { n: '石板御道',                p: new T.Vector3(0, 0.1, 22) },\n];",
-    """  { n: '石板御道',                p: new T.Vector3(0, 0.1, 22) },
+Sc("  { n: '石板御道',                p: new T.Vector3(0, 0.1, 22) },\n];",
+   """  { n: '石板御道',                p: new T.Vector3(0, 0.1, 22) },
   { n: '請香處 · 香亭',            p: new T.Vector3(0, 4.4, 32) },
   { n: '進口 · 牌坊',              p: new T.Vector3(-9, 5.6, 24) },
   { n: '五鳳山門(1) · 彌勒韋陀',   p: new T.Vector3(0, 17.0, 0) },
@@ -150,12 +195,10 @@ rep("  { n: '石板御道',                p: new T.Vector3(0, 0.1, 22) },\n];",
   { n: '室內 · 主尊與成排蒲團',    p: new T.Vector3(0, 2.0, -44) },
 ];""", 'hotspots')
 
-rep("  { n: '「萬年正續」横匾',        p: new T.Vector3(0, 5.75, 3.3) },",
-    "  { n: '「五鳳山門」横匾',        p: new T.Vector3(0, 9.62, 3.3) },", 'hotspot-plaque')
+Sc("  { n: '「萬年正續」横匾',        p: new T.Vector3(0, 5.75, 3.3) },",
+   "  { n: '「五鳳山門」横匾',        p: new T.Vector3(0, 9.62, 3.3) },", 'hotspot-plaque')
 
 # ---- 5b. 主殿（五鳳山門，兼天王殿）整体抬高 + 室内 + 前后券门贯通 ----
-# 基线代码写死了高度与坐标，这里整段重写为参数化版本，与 extension.js 的
-# buildInterior / makeDoorWall 协同；函数声明在同一 bootstrap 作用域内提升，可直接调用。
 HALL_BLOCK = """/* ---------- 8. 主殿（五鳳山門 · 兼天王殿）：抬高檐口 + 可进入室内 ---------- */
 const hall = new T.Group();
 {
@@ -256,11 +299,10 @@ const hall = new T.Group();
 }
 modelRoot.add(hall);"""
 
-rep_re(r'const hall = new T\.Group\(\);.*?modelRoot\.add\(hall\);',
-       HALL_BLOCK, 'hall-block')
+Scre(r'const hall = new T\.Group\(\);.*?modelRoot\.add\(hall\);', HALL_BLOCK, 'hall-block')
 
 # ---- 6. 导出：走通用兼容的 __EXPORT_GLB__ ----
-rep("""// 导出 GLB
+Sc("""// 导出 GLB
 document.getElementById('btn-export').addEventListener('click', async (e) => {
   const btn = e.currentTarget;
   const old = btn.textContent;
@@ -284,7 +326,7 @@ document.getElementById('btn-export').addEventListener('click', async (e) => {
   }
   setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 2200);
 });""",
-    """// 导出 GLB：展开实例化构件、只导出建筑，通用查看器可直接打开
+   """// 导出 GLB：展开实例化构件、只导出建筑，通用查看器可直接打开
 document.getElementById('btn-export').addEventListener('click', async (e) => {
   const btn = e.currentTarget;
   const old = btn.textContent;
@@ -306,8 +348,8 @@ document.getElementById('btn-export').addEventListener('click', async (e) => {
 });""", 'export handler')
 
 # ---- 7. URL 参数直接切视角，便于静态截图 ----
-rep("document.getElementById('loading').classList.add('hide');\nwindow.__TEMPLE_READY__ = true;",
-    """const qv = new URLSearchParams(location.search).get('view');
+Sc("document.getElementById('loading').classList.add('hide');\nwindow.__TEMPLE_READY__ = true;",
+   """const qv = new URLSearchParams(location.search).get('view');
 if (qv && views[qv]) goView(qv);
 if (new URLSearchParams(location.search).has('clean')) {
   document.querySelectorAll('.ui').forEach(el => el.style.display = 'none');
@@ -317,13 +359,27 @@ document.getElementById('loading').classList.add('hide');
 window.__TEMPLE_READY__ = true;""", 'url-view')
 
 # ---- 7b. 每帧人物 / 第三人称相机更新钩子（实现在桥运行时里） ----
-rep("  controls.update();\n  updateLabels();\n  renderer.render(scene, camera);",
-    "  controls.update();\n  if (window.__AVATAR_UPDATE__) window.__AVATAR_UPDATE__(now);\n"
-    "  updateLabels();\n  renderer.render(scene, camera);", 'avatar-hook')
+Sc("  controls.update();\n  updateLabels();\n  renderer.render(scene, camera);",
+   "  controls.update();\n  if (window.__AVATAR_UPDATE__) window.__AVATAR_UPDATE__(now);\n"
+   "  updateLabels();\n  renderer.render(scene, camera);", 'avatar-hook')
 
 # ---- 8. 插入扩展场景代码（必须在斗拱统一实例化之前） ----
-anchor = '/* ---------- 11. 斗拱统一实例化 ---------- */'
-rep(anchor, ext + '\n' + anchor, 'extension insert')
+Sc('/* ---------- 11. 斗拱统一实例化 ---------- */',
+   EXTJS + '\n/* ---------- 11. 斗拱统一实例化 ---------- */', 'extension insert')
 
-io.open(OUT, 'w', encoding='utf-8', newline='').write(s)
-print('\nWROTE', OUT, len(s), 'chars')
+# ---- 9. 合成：vendor 全部内联 + 场景代码，写单文件产物 ----
+if PLACEHOLDER not in HTML:
+    raise SystemExit('MISS: placeholder in page.template.html')
+
+vendor = ''.join(read(os.path.join(HERE, p)) for p in VENDOR_PARTS)
+out = HTML.replace(PLACEHOLDER, vendor + SCEN, 1)
+
+io.open(OUT, 'w', encoding='utf-8', newline='').write(out)
+
+total = len(out.encode('utf-8'))
+app = len(SCEN.encode('utf-8'))
+print('\n--- 体积 ---')
+print('  vendor/   %10s B' % format(len(vendor.encode('utf-8')), ','))
+print('  src/      %10s B' % format(app, ','))
+print('  产物      %10s B' % format(total, ','))
+print('WROTE', OUT)

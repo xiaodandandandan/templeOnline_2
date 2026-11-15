@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html data-page-node-id="XwAYuppaeQ7R6RQGKEQuLb" lang="zh-CN">
+<head data-page-node-id="A8A9ugVQ4Vd0dKg166yamU">
+<script data-page-node-id="O3Gbv1s0YnKQwqQTGIRsGm" src="/page/page_comm/inject.js"></script>
+<meta data-page-node-id="rSirXC0kES6f9tTUlNxSOX" charset="UTF-8">
+<meta data-page-node-id="z4n4wL8Sk0LMp0hsyMacHy" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<link data-page-node-id="S9gjgGMC0CrvKynrGdX1s1" href="data:," rel="icon">
+<title data-page-node-id="Al8fWxrLrSiDBwuu38pCoh" data-pnid-children="Q05kxXqiFCRsrEzGjNzu36">徑山萬壽禪寺 · 山門殿 | Three.js 程序化 3D 复原</title>
+<style data-page-node-id="eKBNqmAOsq7P3kB8felsTQ" data-pnid-children="yMF6otVi6ovIkzagoR4IfJ">
+  :root{
+    --glass: rgba(22,30,36,.78);
+    --glass-2: rgba(30,40,48,.72);
+    --line: rgba(226,196,132,.28);
+    --gold: #e6c37e;
+    --txt: #f2ede3;
+    --sub: #b8c0c2;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#a9cbe2}
+  body{font-family:"Noto Sans CJK SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;color:var(--txt)}
+  #scene{position:fixed;inset:0}
+  #scene canvas{display:block;width:100%;height:100%}
+  .ui{position:fixed;z-index:10}
+  .card{
+    background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border:1px solid var(--line);border-radius:14px;
+    box-shadow:0 8px 30px rgba(0,0,0,.22);
+  }
+  /* 标题 */
+  #title{top:20px;left:20px;padding:16px 20px 15px;max-width:340px}
+  #title .kicker{font-size:11px;letter-spacing:.22em;color:var(--gold);margin-bottom:7px}
+  #title h1{margin:0;font-size:21px;font-weight:700;letter-spacing:.06em;line-height:1.35}
+  #title h1 small{display:block;font-size:12px;font-weight:400;letter-spacing:.08em;color:var(--sub);margin-top:5px}
+  #title .desc{margin-top:11px;padding-top:10px;border-top:1px solid var(--line);font-size:11.5px;line-height:1.75;color:#cdd3d2}
+  #title .desc b{color:var(--gold);font-weight:600}
+  /* 视角 */
+  #views{top:20px;right:20px;padding:11px;display:flex;flex-direction:column;gap:7px;width:104px}
+  .lbl{font-size:10px;letter-spacing:.16em;color:var(--gold);text-align:center;margin-bottom:3px}
+  button{
+    font-family:inherit;color:var(--txt);background:rgba(255,255,255,.055);
+    border:1px solid rgba(255,255,255,.14);border-radius:8px;
+    padding:8px 10px;font-size:12px;cursor:pointer;transition:.18s;white-space:nowrap;
+  }
+  button:hover{background:rgba(230,195,126,.18);border-color:rgba(230,195,126,.5)}
+  button.active{background:rgba(230,195,126,.22);border-color:var(--gold);color:#ffe6b4}
+  button:disabled{opacity:.55;cursor:default}
+  /* 控制面板 */
+  #panel{left:20px;bottom:20px;padding:13px 14px;display:grid;grid-template-columns:repeat(2,minmax(96px,1fr));gap:7px}
+  #panel .full{grid-column:1/-1}
+  #panel .ttl{grid-column:1/-1;font-size:10px;letter-spacing:.16em;color:var(--gold);margin-bottom:2px}
+  /* 右侧操作 */
+  #tools{right:20px;bottom:20px;padding:13px 14px;display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:150px}
+  #tools .ttl{font-size:10px;letter-spacing:.16em;color:var(--gold);text-align:center}
+  #tools .hint{font-size:10.5px;line-height:1.7;color:var(--sub);text-align:center;border-top:1px solid var(--line);padding-top:9px}
+  /* 标注 */
+  #labels{position:fixed;inset:0;z-index:5;pointer-events:none;display:none}
+  .hotspot{position:absolute;transform:translate(-10px,-50%);display:flex;align-items:center;gap:7px;white-space:nowrap}
+  .hotspot .dot{width:9px;height:9px;border-radius:50%;background:var(--gold);border:2px solid #fff;box-shadow:0 0 0 4px rgba(230,195,126,.25),0 2px 8px rgba(0,0,0,.4);flex:none}
+  .hotspot .txt{background:rgba(18,26,31,.86);border:1px solid var(--line);color:#fff4dd;font-size:11px;padding:5px 9px;border-radius:6px;letter-spacing:.03em}
+  /* loading */
+  #loading{position:fixed;inset:0;z-index:50;background:#a9cbe2;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .7s}
+  #loading.hide{opacity:0;pointer-events:none}
+  #loading .t{font-size:16px;letter-spacing:.28em;color:#33454e}
+  #loading .s{font-size:11px;letter-spacing:.12em;color:#5b7079}
+  #loading .bar{width:150px;height:2px;background:rgba(51,69,78,.2);overflow:hidden;border-radius:2px}
+  #loading .bar i{display:block;width:40%;height:100%;background:#33454e;animation:ld 1.1s infinite ease-in-out}
+  @keyframes ld{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
+  @media (max-width:760px){
+    #title{top:12px;left:12px;padding:11px 13px;max-width:210px}
+    #title h1{font-size:15px}
+    #title h1 small{font-size:10px}
+    #title .desc{display:none}
+    #views{top:12px;right:12px;width:76px;padding:8px}
+    #views button{font-size:11px;padding:6px 4px}
+    #panel{left:12px;bottom:12px;padding:9px;gap:5px;grid-template-columns:repeat(2,74px)}
+    #panel button{font-size:10px;padding:6px 4px}
+    #tools{right:12px;bottom:12px;min-width:112px;padding:9px}
+    #tools button{font-size:10px;padding:6px}
+    #tools .hint{display:none}
+  }
+</style>
+</head>
+<body data-page-node-id="t3pMYLplPU0TNlWoAINPvo">
+<div data-page-node-id="gjoh85DMBjoBVeU5BY04JM" id="scene"></div>
+<div data-page-node-id="AE1O7YMQQfsa929uttiCXj" id="labels"></div>
+
+<div data-page-node-id="RwpYSwOQpsskoSOuDScIhO" class="ui card" id="title">
+  <div data-page-node-id="DHWrWhddo7jwUMDb6eFubB" class="kicker"><!--pnid:igb8XZ1fBSu8GPYywxCgz9-->THREE.JS · PROCEDURAL MODEL</div>
+  <h1 data-page-node-id="PUgT0FoGDt8lhP8bErILlB"><!--pnid:WZowZEwoMa2KsjxeiWdRKA-->徑山萬壽禪寺 · 山門殿
+    <small data-page-node-id="C43ODg4nmAt0Zq31z1qJkm"><!--pnid:1vyLSRe7vSq0s0hEHRUbrO-->基于照片的程序化三维复原</small>
+  </h1>
+  <div data-page-node-id="Z2MZwSo29N0w6y7zppoE9O" class="desc">
+    <b data-page-node-id="S5diW8B6Mp6o4S4kAA1azy"><!--pnid:HAl8b5HyZWG0WeDR6IsaMG-->重檐庑殿顶</b><!--pnid:S7LpxxBsXzkt74EAZ2ICkp--> · 举折反宇 · 飞檐翘角<br data-page-node-id="j6YZs2MC8JOPtmGSkLNi4y"><!--pnid:v0nAydr4JTQOo8k4sTW776-->
+    白墙栗色木构 · <b data-page-node-id="w3QIoa1BSwJI090c5Jxgi3"><!--pnid:obmmAKe31nQzAqWfiQx42q-->三券门</b><!--pnid:7kPJGC2nbOxHVrs62vlfoZ--> · 斗拱层<br data-page-node-id="6QGknvYdX3HLnJnsiaSnxI"><!--pnid:EjP81HZt65Wi2Af6H2AMfw-->
+    左右钟鼓楼（四角攒尖宝顶）<br data-page-node-id="TdzEZ0cFcaqZt4NwFIJPD4"><!--pnid:ggyU3YjDUoD01wIhavBuu9-->
+    石狮 · 石经幢 · 古杉 · 廊庑 · 石板御道
+  </div>
+</div>
+
+<div data-page-node-id="EYaf9JZD9LQDvXAmaSg1Lg" class="ui card" id="views">
+  <div data-page-node-id="FOHCS4M1yV1DwLSLReI4SS" class="lbl"><!--pnid:5iDFe40F5WQ5IPyubS7Oyu-->视角</div>
+  <button data-page-node-id="R9VtrVZximInBqCNUbqfer" class="active" data-view="front"><!--pnid:XmjjBcXZcm3TouHwMh5C1n-->正面</button>
+  <button data-page-node-id="jixe5GKwSJIolUA2PjshiM" data-view="angle"><!--pnid:4BrAOp7Z0lHsygmSA15s2x-->左前 45°</button>
+  <button data-page-node-id="oS09ud3m9WO97bbrMRvV3L" data-view="top"><!--pnid:YRFjnKI5b65akXyeWcfR4y-->俯瞰</button>
+  <button data-page-node-id="HNlH7n7GaHiAJKabeU1mbu" data-view="close"><!--pnid:dqEvB2bxwQ4m2BFXBHWQGz-->近景</button>
+</div>
+
+<div data-page-node-id="xdOZajaxUDc2Gorlj321Ai" class="ui card" id="panel">
+  <div data-page-node-id="Xk76ULBlGaHe4uVU5kRAbU" class="ttl"><!--pnid:JWQXeU8hmnnomV2U6xBghf-->显示设置</div>
+  <button data-page-node-id="6jS7sMC9jjXOpv5InUFwSs" class="active" id="tg-rotate"><!--pnid:ztsGS6Ss6KBibO44nl3ShG-->自动旋转</button>
+  <button data-page-node-id="dP1mkdN4EAToRQMCNGJMf4" id="tg-label"><!--pnid:rAh8IFSRz1DCWVU3AkkYdp-->构件标注</button>
+  <button data-page-node-id="PlD1LkDz61F8Bs9AtZaBfW" class="active" id="tg-tree"><!--pnid:5QTujGxhvw3LeZkzZbz9pQ-->树木</button>
+  <button data-page-node-id="XwhhFRu3NATpLpueZ0YyAM" id="tg-wire"><!--pnid:Ki6u91SoGwNOEHBeNXd74h-->线框</button>
+  <button data-page-node-id="VT5JHDNePCqPUBXu4Q821s" class="full" id="tg-light"><!--pnid:nZKIzsqj7RHe9YAO1wjcfp-->☾ 黄昏</button>
+</div>
+
+<div data-page-node-id="BCkCzYzW8dIRr5WCnlxGOz" class="ui card" id="tools">
+  <div data-page-node-id="OovBw5BafOgI12bqtDphOh" class="ttl"><!--pnid:AzwsSYXverBFB1ZD0hxrrm-->操作</div>
+  <button data-page-node-id="WdFdkuVLBh6q4ZfTjpnhl2" id="btn-reset"><!--pnid:GTIZ2jrmvOeFlxUTfLBqsA-->复位视角</button>
+  <button data-page-node-id="JoDnvveFPPDSyHjAXGaZCH" id="btn-export"><!--pnid:APEiPTgDubJr6Kr33YbT94-->⬇ 导出 GLB 模型</button>
+  <div data-page-node-id="zwx34i4NdzrGqU7mZbyvMw" class="hint"><!--pnid:NJVCBGBlvcrgnjKVpNkgGN-->左键拖拽 · 旋转<br data-page-node-id="d2TIU6JhmD95rTGk5wx1St"><!--pnid:Uf6yeVcRYbP9iCJL6EeD9q-->滚轮 · 缩放<br data-page-node-id="cbh7cP1M3YqouQZTAA9VrO"><!--pnid:o36eTf2A019WrtDsWGVoVN-->右键拖拽 · 平移</div>
+</div>
+
+<div data-page-node-id="MzzX6hjtAidgBsZaEEDfoA" id="loading"><div data-page-node-id="QJCm9wv5f6Z4dfGL3PQEfg" class="t"><!--pnid:c8uTV7xQYLcEayxa7Fx7Og-->徑 山 萬 壽 禪 寺</div><div data-page-node-id="LfV7D4cJhU6mZvTy1RbThM" class="bar"><i data-page-node-id="GdtLosHFbiNqYNToYbCL4x"></i></div><div data-page-node-id="qJ7AD11pX7zOqr00czZMQ2" class="s"><!--pnid:kEfleUTXSEdNV3PlLSI0Qf-->正在生成三维构件…</div></div>
+
+<script data-page-node-id="5F54RPwpxwMYbLQPpBleXb" data-pnid-children="VF7wQxBFj9gJdbfR8s2qIH">
+window.addEventListener('error', function(e){
+  document.body.setAttribute('data-error', (e.message||'') + ' @ ' + (e.filename||'') + ':' + (e.lineno||''));
+  if (/WebGL/i.test(e.message || '')) {
+    var l = document.getElementById('loading');
+    if (l) {
+      l.querySelector('.t').textContent = '无法初始化 3D 场景';
+      l.querySelector('.s').textContent = '当前环境未启用 WebGL，请用 Chrome / Edge 打开本文件';
+      l.querySelector('.bar').style.display = 'none';
+    }
+  }
+});
+window.addEventListener('unhandledrejection', function(e){
+  document.body.setAttribute('data-rejection', String(e.reason && e.reason.message || e.reason));
+});
+</script>
+<script data-page-node-id="lIcEMdFiFr3xwNNFyKSXAs" data-pnid-children="5nVlVzt10L2Vpy6r7xBJY8" type="module">
+/*__VENDOR__*//*__APP__*/</script>
+</body>
+</html>

@@ -2,9 +2,13 @@
 node_modules/
 
 # 构建产物（可由 python build.py + npm run build 重建）
+jingshan-temple/index.html
 jingshan-worship/dist/
 jingshan-worship/public/temple/
 coverage/
+
+# 拆分前的单文件基线：内容已归入 jingshan-temple/vendor 与 src，本地留底
+_baseline/
 
 # 环境与本地文件
 .env
