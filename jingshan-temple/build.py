@@ -214,6 +214,16 @@ const hall = new T.Group();
     W, H, top: TOP, floorY: F, ceilingY: TOP + H - 0.75,
     frontWallZ: wallZ, backWallZ: backZ, doorHalf,
     backDoor: true, bodyFront: 5.05, bodyBack: backZ - 0.35,
+    // 山门兼天王殿：进门见弥勒，弥勒身后是面朝内院（ry 转 180°）的韦陀，
+    // 四大天王分列两侧。原先韦陀放在 dz +1.55，正好杵在中央拜道上挡住人物。
+    pantheon: [
+      { kind: 'maitreya', h: 3.05, x: 0,     dz: 0.55, main: true },
+      { kind: 'weiTuo',   h: 2.50, x: 0,     dz: -1.20, ry: Math.PI },
+      { kind: 'guardian', h: 2.35, x: -6.30, dz: 0.10 },
+      { kind: 'guardian', h: 2.35, x: 6.30,  dz: 0.10 },
+      { kind: 'guardian', h: 2.35, x: -3.95, dz: -0.95 },
+      { kind: 'guardian', h: 2.35, x: 3.95,  dz: -0.95 }
+    ],
   }, 'tianwang', 0);
 
   // 白墙 + 三券门：中央门敞开供人物穿行；两侧门保留深色格栅
@@ -227,15 +237,15 @@ const hall = new T.Group();
   ];
   doors.forEach(d => shape.holes.push(archShape(d.x, d.w, d.h)));
   const wallGeo = new T.ExtrudeGeometry(shape, { depth: 0.5, bevelEnabled: false, curveSegments: 20 });
-  IT.cut.add(makeMesh(wallGeo, M.wall, 0, TOP, wallZ));
+  IT.front.add(makeMesh(wallGeo, M.wall, 0, TOP, wallZ));
   doors.forEach(d => {
     if (!d.open) {
       const s = archShape(d.x, d.w - 0.06, d.h - 0.03);
       const dark = new T.ShapeGeometry(s, 20); remapShapeUV(dark, d.w, d.h);
-      IT.cut.add(makeMesh(dark, M.ink, 0, TOP, wallZ + 0.47, false));
+      IT.front.add(makeMesh(dark, M.ink, 0, TOP, wallZ + 0.47, false));
       const lat = new T.ShapeGeometry(s, 20); remapShapeUV(lat, d.w, d.h);
       const lm = M.lattice.clone(); lm.map = latticeTex.clone(); lm.map.repeat.set(2.2, 2.6); lm.map.needsUpdate = true;
-      IT.cut.add(makeMesh(lat, lm, 0, TOP, wallZ + 0.485, false));
+      IT.front.add(makeMesh(lat, lm, 0, TOP, wallZ + 0.485, false));
     }
     const pts = archOutline(d.x, d.w + 0.06, d.h + 0.03)
       .map(p => new T.Vector3(p[0], p[1] + TOP, wallZ + 0.53));
@@ -246,7 +256,7 @@ const hall = new T.Group();
   // 侧墙 / 后墙（后墙开中央券门，与御道贯通）
   hall.add(box(0.5, H, 10.4, M.wallShade, -W / 2 - 0.2, TOP + H / 2, -2.1));
   hall.add(box(0.5, H, 10.4, M.wallShade, W / 2 + 0.2, TOP + H / 2, -2.1));
-  hall.add(makeDoorWall(W, H, 3.50, 6.20, TOP, backZ, M.wallShade, 0.5));
+  hall.add(makeDoorWall(W, H, 3.50, 4.70, TOP, backZ, M.wallShade, 0.5));
 
   // 前廊柱列 + 额枋 + 斗拱
   const C = H + 0.10;

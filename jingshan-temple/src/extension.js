@@ -67,6 +67,60 @@ window.__LAYOUT__ = {
   maxZ: 27,
 };
 
+/* 各殿内部造像配置：h 为连座总高，dz 为相对佛坛中心的进深偏移（负值靠后）。
+ * 中轴大殿 2.6~3.0（殿高 8.8~10.4）；配殿内部仅 6.9 深，缩到 1.8 左右才不逼视。 */
+const PANTHEON = {
+  shijia: [
+    { kind: 'buddha',      h: 5.00, x: 0,     main: true },
+    { kind: 'disciple',    h: 3.30, x: -2.35, dz: -1.00 },
+    { kind: 'disciple',    h: 3.30, x: 2.35,  dz: -1.00 },
+    { kind: 'bodhisattva', h: 3.55, x: -4.65, dz: -0.95 },
+    { kind: 'bodhisattva', h: 3.55, x: 4.65,  dz: -0.95 },
+  ],
+  chaoyin: [
+    { kind: 'bodhisattva', h: 4.20, x: 0,     main: true },
+    { kind: 'disciple',    h: 2.80, x: -2.15, dz: -0.95 },
+    { kind: 'disciple',    h: 2.80, x: 2.15,  dz: -0.95 },
+  ],
+  guanyin: [
+    { kind: 'waterMoon',   h: 4.40, x: 0,     main: true },
+    { kind: 'attendant',   h: 2.45, x: -2.45, dz: -0.92 },
+    { kind: 'attendant',   h: 2.45, x: 2.45,  dz: -0.92 },
+  ],
+  lingxiao: [
+    { kind: 'buddha',      h: 4.55, x: -3.80, main: true },
+    { kind: 'buddha',      h: 4.90, x: 0,     main: true },
+    { kind: 'buddha',      h: 4.55, x: 3.80,  main: true },
+    { kind: 'bodhisattva', h: 3.60, x: -6.60, dz: -0.95 },
+    { kind: 'bodhisattva', h: 3.60, x: 6.60,  dz: -0.95 },
+  ],
+  tianwang: [
+    { kind: 'maitreya',    h: 2.55, x: 0, dz: -0.95, main: true },
+    { kind: 'weiTuo',      h: 2.45, x: 0, dz: 1.70 },
+  ],
+};
+/* 配殿按匾名配置：佛殿有像，功能房（祖堂 / 五观堂 / 客堂 / 院落）暂不设佛像 */
+const SIDE_PANTHEON = {
+  '藥師殿':       [{ kind: 'medicine', h: 3.00, x: 0, main: true },
+                   { kind: 'attendant', h: 2.05, x: -1.95, dz: -0.85 },
+                   { kind: 'attendant', h: 2.05, x: 1.95, dz: -0.85 }],
+  // 两尊并坐：间距收到 ±2.0，原先 ±2.6 时侧后方机位会把其中一尊顶到画框外
+  '龍王殿·財神殿': [{ kind: 'dragonKing', h: 2.90, x: -2.0, main: true },
+                   { kind: 'wealth', h: 2.90, x: 2.0, main: true }],
+  '西配院':       [{ kind: 'bodhisattva', h: 2.85, x: 0, main: true }],
+  '東配院':       [{ kind: 'bodhisattva', h: 2.85, x: 0, main: true }],
+};
+/* 功能房：不供像，改陈设（祖堂抄经、五观堂斋堂、客堂接待、廊庑经柜、院落储物） */
+const SIDE_FURNISH = {
+  '祖堂': 'scriptorium',
+  '五觀堂': 'dining',
+  '客堂': 'lounge',
+  '東廡': 'cabinet',
+  '西院': 'store',
+  '東院': 'store',
+};
+Object.keys(SIDE_FURNISH).forEach((k) => { SIDE_PANTHEON[k] = []; });
+
 /* 前院（五鳳山門 ↔ 釋迦寶殿）抄手廊：外移配殿 + 廊廡一并加大中庭。
  * 全部廊段都在 |x| ≥ 14.6，中央御道（|x| < 4.1）是唯一通往殿门的直路；
  * 廊两端与山门后墙、释迦月台踏道均留空隙，不接门。 */
@@ -411,35 +465,40 @@ function buildInterior(group, spec, id, baseY) {
       color: c, roughness: r === undefined ? 0.92 : r, metalness: m || 0,
       emissive: e || 0x000000, emissiveIntensity: 0.38,
     });
-    // 法堂背屏壁画：赭底金光 + 莲瓣 + 云气，程序化 canvas 一次生成、全寺复用
+    // 法堂背屏：枣红底 + 淡金祥云，整幅作「静的背景」——
+    // 反复的同心圆会与佛像背光抢焦点，改为中心一团柔光晕 + 四角云气
     const muralTex = canvasTex(512, 384, (g, w, h) => {
       const bg = g.createLinearGradient(0, 0, 0, h);
-      bg.addColorStop(0, '#5b3224'); bg.addColorStop(1, '#2a1812');
+      bg.addColorStop(0, '#8a4a30'); bg.addColorStop(0.55, '#79402a'); bg.addColorStop(1, '#5e2f1e');
       g.fillStyle = bg; g.fillRect(0, 0, w, h);
-      const cx = w / 2, cy = h * 0.46;
-      [148, 122, 96, 70].forEach((r, i) => {
-        g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2);
-        g.strokeStyle = i % 2 ? 'rgba(226,183,92,.55)' : 'rgba(247,214,140,.75)';
-        g.lineWidth = i % 2 ? 3 : 6; g.stroke();
-      });
-      for (let i = 0; i < 20; i++) {
-        const a = i * Math.PI / 10;
-        g.save(); g.translate(cx + Math.cos(a) * 96, cy + Math.sin(a) * 96);
-        g.rotate(a + Math.PI / 2);
-        g.beginPath(); g.ellipse(0, 0, 13, 34, 0, 0, Math.PI * 2);
-        g.fillStyle = 'rgba(224,178,96,.42)'; g.fill();
-        g.restore();
-      }
-      g.strokeStyle = 'rgba(232,196,124,.34)'; g.lineWidth = 3;
-      for (let k = 0; k < 4; k++) {
-        const yy = 46 + k * 94;
-        g.beginPath(); g.moveTo(0, yy);
-        g.bezierCurveTo(w * 0.24, yy - 30, w * 0.34, yy + 34, w * 0.5, yy + 4);
-        g.bezierCurveTo(w * 0.66, yy - 26, w * 0.78, yy + 30, w, yy);
+      // 中心柔光：把视线收在佛身上，不画实体圆环
+      const glow = g.createRadialGradient(w / 2, h * 0.42, 20, w / 2, h * 0.42, w * 0.46);
+      glow.addColorStop(0, 'rgba(255,214,150,.40)');
+      glow.addColorStop(0.55, 'rgba(226,170,104,.14)');
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = glow; g.fillRect(0, 0, w, h);
+      // 云气：四层横卷，越靠上越淡
+      for (let k = 0; k < 5; k++) {
+        const yy = 44 + k * 74;
+        g.globalAlpha = 0.16 - k * 0.018;
+        g.strokeStyle = '#f2d69a'; g.lineWidth = 4;
+        g.beginPath(); g.moveTo(-10, yy);
+        g.bezierCurveTo(w * 0.22, yy - 26, w * 0.34, yy + 30, w * 0.5, yy + 2);
+        g.bezierCurveTo(w * 0.66, yy - 24, w * 0.8, yy + 28, w + 10, yy);
         g.stroke();
       }
+      g.globalAlpha = 1;
+      // 底缘莲瓣一排，交代背屏的「台」感
+      for (let i = 0; i < 16; i++) {
+        const bx = 18 + i * (w - 36) / 15;
+        g.beginPath();
+        g.moveTo(bx, h - 16); g.quadraticCurveTo(bx + 15, h - 54, bx + 30, h - 16);
+        g.closePath();
+        g.fillStyle = 'rgba(232,188,114,.22)'; g.fill();
+        g.strokeStyle = 'rgba(247,224,168,.34)'; g.lineWidth = 1.6; g.stroke();
+      }
       g.strokeStyle = '#b18a45'; g.lineWidth = 9; g.strokeRect(9, 9, w - 18, h - 18);
-      g.strokeStyle = 'rgba(247,214,140,.5)'; g.lineWidth = 2; g.strokeRect(22, 22, w - 44, h - 44);
+      g.strokeStyle = 'rgba(247,214,140,.42)'; g.lineWidth = 2; g.strokeRect(22, 22, w - 44, h - 44);
     });
     return {
       floor:    mk(0xb99a70, 0x3a2410), joint:  mk(0x7d6144, 0x20160b),
@@ -451,10 +510,21 @@ function buildInterior(group, spec, id, baseY) {
       gold:     new T.MeshStandardMaterial({ color: 0xe8bc62, roughness: 0.33, metalness: 0.58, emissive: 0x4d3310, emissiveIntensity: 0.3 }),
       goldLight:new T.MeshStandardMaterial({ color: 0xf5d489, roughness: 0.42, metalness: 0.30, emissive: 0x7a5518, emissiveIntensity: 0.45 }),
       bronze:   new T.MeshStandardMaterial({ color: 0x8b6a3e, roughness: 0.50, metalness: 0.50, emissive: 0x2a1e0c, emissiveIntensity: 0.3 }),
-      cushion:  mk(0x8e8a83, 0x1a1815), cushionEdge: mk(0x6d6a66, 0x141210),
+      cushion:  mk(0x9c7d55, 0x2a1d10), cushionEdge: mk(0x6f5334, 0x180f07),
       mat:      mk(0xb6a184, 0x2d2213), bead: mk(0x6a3a24, 0x1a0d08),
       lamp:     new T.MeshStandardMaterial({ color: 0xffd9a0, roughness: 0.5, metalness: 0, emissive: 0xffb347, emissiveIntensity: 0.85 }),
       mural:    new T.MeshStandardMaterial({ map: muralTex, color: 0xffffff, roughness: 0.88, emissive: 0x3a1e0e, emissiveIntensity: 0.3 }),
+      /* —— 殿内视角专用：天花望板 / 椽 / 彩画 / 幡幔 / 供果 ——
+       * 镜头贴身后这些才是画面主体，剖视俯瞰时看不到，但必须有实体否则顶部漏空。 */
+      ceil:     mk(0x6b4a33, 0x2a1a10, 0.95),
+      rafter:   mk(0x9a6446, 0x2e1a12, 0.92),
+      paintC:   mk(0x2f6a61, 0x0e2b27, 0.80),
+      paintB:   mk(0x2f4f7a, 0x0d1c30, 0.80),
+      panel:    mk(0xc9ab84, 0x372a18, 0.95),
+      cloth:    mk(0xbcaa86, 0x2f2818, 0.95),
+      clothR:   mk(0x9c3f31, 0x2c0f0a, 0.95),
+      fruit:    mk(0xc0603c, 0x2c1109, 0.85),
+      leaf:     mk(0x4f7a4a, 0x14210f, 0.90),
     };
   })());
 
@@ -467,9 +537,16 @@ function buildInterior(group, spec, id, baseY) {
 
   group.updateMatrixWorld(true);
   const inner = new T.Group(); group.add(inner);
-  const cut = new T.Group();   group.add(cut);   // 剖视组：屋顶 / 天花 / 前墙
+  const cut = new T.Group();   group.add(cut);   // 剖视组：屋顶 / 腰檐 / 上檐（俯瞰掀盖时隐藏）
   cut.userData.cutaway = id;
   REG.roofs[id] = cut;
+  /* 天花与前墙从剖视组里拆出来单列：
+   * 俯瞰掀盖（镜头拉远）时三者一起隐藏；殿内视角（镜头贴身）只隐藏屋顶，
+   * 天花与前墙必须留着 —— 否则从室内朝门口看会直接穿透到天空与邻殿瓦顶。 */
+  const ceilG = new T.Group(); group.add(ceilG);
+  const frontG = new T.Group(); group.add(frontG);
+  (REG.ceilings || (REG.ceilings = {}))[id] = ceilG;
+  (REG.fronts || (REG.fronts = {}))[id] = frontG;
 
   const world = (lx, ly, lz) => {
     const v = group.localToWorld(new T.Vector3(lx, ly, lz));
@@ -516,7 +593,7 @@ function buildInterior(group, spec, id, baseY) {
   // 2) 侧壁内装修：木质格窗，入殿后不再面对空荡白墙
   const winN = 2;
   [-1, 1].forEach(s => {
-    const wx = s * (innerW / 2 - 0.06);
+    const wx = s * (innerW / 2 - 0.16);
     for (let i = 0; i < winN; i++) {
       const wz = zB + (i + 0.5) * innerD / winN;
       const ww = Math.min(1.75, innerD / winN * 0.74);
@@ -525,117 +602,434 @@ function buildInterior(group, spec, id, baseY) {
     }
   });
 
+  // 2b) 前墙内侧收口：板壁 + 门额挂落 + 门内槛石
+  //     殿内视角里这一面正对镜头背后，原先是一整片素白挤出体侧壁。
+  const bWallH = Math.max(2.2, H - 1.0);
+  const sideW = Math.max(0.8, innerW / 2 - doorHalf - 0.25);
+  [-1, 1].forEach(s => {
+    const bx = s * (doorHalf + 0.30 + sideW / 2);
+    addBox(sideW, bWallH, 0.09, IM.wood, bx, F + bWallH / 2, frontZ - 0.62);
+    addBox(sideW, 0.10, 0.13, IM.beam, bx, F + bWallH - 0.05, frontZ - 0.62);
+    addBox(sideW, 0.08, 0.11, IM.trim, bx, F + 0.12, frontZ - 0.62);
+    // 殿内回望门口时，这一面整片暗红太闷：腰线 + 彩带 + 跨间立柱分格
+    addBox(sideW, 0.26, 0.115, IM.paintC, bx, F + 2.98, frontZ - 0.655);
+    addBox(sideW, 0.10, 0.115, IM.trim, bx, F + 1.24, frontZ - 0.655);
+    addBox(sideW, 1.10, 0.105, IM.panel, bx, F + 0.62, frontZ - 0.655);
+    const nS = Math.max(2, Math.round(sideW / 2.3));
+    // 柱高按天花反推；ceilY 在下一节才 const 声明，这里直接读 spec，避免 TDZ
+    const studH = Math.min(bWallH * 0.985,
+      (spec.ceilingY !== undefined ? spec.ceilingY : top + H - 0.30) - F);
+    for (let i = 0; i <= nS; i++) {
+      addBox(0.15, studH, 0.13, IM.column,
+        bx - sideW / 2 + i * sideW / nS, F + studH / 2, frontZ - 0.665);
+    }
+  });
+  addBox(doorHalf * 2 + 1.5, 0.24, 0.18, IM.beam, 0, F + H * 0.72 + 0.32, frontZ - 0.66);
+  [-1, 1].forEach(s =>
+    addBox(0.16, 0.42, 0.22, IM.goldLight, s * (doorHalf * 0.55), F + H * 0.72 + 0.14, frontZ - 0.68));
+  addBox(Math.min(3.6, doorHalf * 2 + 0.6), 0.09, 0.58, IM.base, 0, F + 0.045, frontZ - 0.32);
+
+  /* 2c) 墙面装修：基线墙体是素色 shade 墙，殿内近看是一整片灰面。
+   *     贴一层「裙板 + 壁板 + 彩带 + 跨间立柱」，侧墙与后墙两侧都覆盖到。 */
+  const DR = 0.07;
+  const wallTop = (spec.ceilingY !== undefined ? spec.ceilingY : top + H - 0.30) - 0.12;
+  const wallH = Math.max(3.0, wallTop - F);
+  [-1, 1].forEach(s => {
+    const wx = s * (innerW / 2 - 0.02);
+    const wz = innerD - 0.12;
+    addBox(DR, 1.22, wz, IM.wood,  wx, F + 0.66, innerCZ);               // 裙板
+    addBox(DR, wallH - 1.22, wz, IM.panel, wx, F + 1.22 + (wallH - 1.22) / 2, innerCZ); // 壁板通高
+    addBox(DR + 0.02, 0.30, wz, IM.paintC, wx, F + 2.98, innerCZ);       // 彩带
+    addBox(DR + 0.02, 0.12, wz, IM.trim,   wx, F + 1.28, innerCZ);
+    const nb = Math.max(3, Math.round(innerD / 3.2));
+    for (let i = 0; i <= nb; i++) {                                      // 跨间立柱
+      addBox(0.18, Math.min(wallH, 4.2), 0.18, IM.column, wx - s * 0.075, F + Math.min(wallH, 4.2) / 2, zB + i * innerD / nb);
+    }
+  });
+  // 后墙两侧：裙板 + 通高壁板（中央留后门洞 3 米，壁画另计）
+  [-1, 1].forEach(s => {
+    const bw = Math.max(0.8, (innerW - 3.2) / 2);
+    const bx = s * (1.6 + bw / 2);
+    addBox(bw, wallH, DR, IM.panel, bx, F + wallH / 2, zB + 0.02);
+    addBox(bw, 1.00, DR + 0.02, IM.wood, bx, F + 0.50, zB + 0.03);
+    addBox(bw, 0.28, DR + 0.03, IM.paintC, bx, F + 2.98, zB + 0.04);
+    addBox(bw, 0.12, DR + 0.03, IM.trim, bx, F + 1.28, zB + 0.04);
+  });
+
   // 3) 柱网贴两侧布置：两列三排，中央完全让出拜道（法堂式大空间）
-  const colH = Math.max(2.6, H - 0.5);
+  //    柱高改由天花标高反推 —— 殿内视角里柱头必须顶到梁底，不能悬空。
+  const ceilY = spec.ceilingY !== undefined ? spec.ceilingY : top + H - 0.30;
+  const colH = Math.max(2.6, ceilY - F - 0.30);
   [-W * 0.42, W * 0.42].forEach(cx => {
     [zB + innerD * 0.20, zB + innerD * 0.54, zF - innerD * 0.16].forEach(cz => {
       addBox(0.60, 0.14, 0.60, IM.base, cx, F + 0.07, cz);
       addCyl(0.18, 0.21, colH, IM.column, 10, cx, F + colH / 2 + 0.12, cz);
-      addBox(0.62, 0.18, 0.62, IM.beam, cx, F + colH + 0.20, cz);
+      addBox(0.62, 0.18, 0.62, IM.beam, cx, F + colH + 0.18, cz);
     });
-    addBox(0.22, 0.26, innerD * 0.92, IM.wood, cx, F + colH + 0.28, innerCZ);
+    addBox(0.22, 0.26, innerD * 0.92, IM.wood, cx, F + colH + 0.22, innerCZ);
   });
 
-  // 4) 天花梁架 + 中心藻井（归入剖视组，入殿后隐藏以便俯看室内）
-  const ceilY = spec.ceilingY !== undefined ? spec.ceilingY : top + H - 0.30;
+  // 4) 天花：望板封顶 + 椽子 + 檩 + 梁 + 中心藻井（殿内抬头即见此面）
+  //    望板是殿内视角的关键：没有它，抬头会从屋面背面（单面材质）直接看到天空。
+  addBox(innerW + 0.8, 0.10, innerD + 1.2, IM.ceil, 0, ceilY + 0.16, innerCZ, ceilG);
+  // 椽子：贴望板下方满铺，间距 0.55
+  const nRaf = Math.max(6, Math.min(46, Math.round(innerW / 0.55)));
+  for (let i = 0; i <= nRaf; i++)
+    addBox(0.09, 0.11, innerD + 1.0, IM.rafter,
+      -innerW / 2 + i * innerW / nRaf, ceilY + 0.055, innerCZ, ceilG);
+  // 檩：横向三道，压住椽尾
+  [zB + innerD * 0.12, innerCZ, zF - innerD * 0.12].forEach(cz =>
+    addBox(innerW + 0.6, 0.15, 0.17, IM.beam, 0, ceilY - 0.03, cz, ceilG));
+  // 梁架：七道主梁 + 三道纵枋（原剖视内容，改为天花组）
   for (let i = -3; i <= 3; i++)
-    addBox(W - 0.9, 0.16, 0.20, IM.beam, 0, ceilY, zB + (i + 3) * innerD / 6, cut);
+    addBox(W - 0.9, 0.17, 0.21, IM.beam, 0, ceilY - 0.14, zB + (i + 3) * innerD / 6, ceilG);
   [-W * 0.30, 0, W * 0.30].forEach(x =>
-    addBox(0.20, 0.18, innerD, IM.beam, x, ceilY + 0.13, innerCZ, cut));
+    addBox(0.21, 0.19, innerD, IM.beam, x, ceilY - 0.01, innerCZ, ceilG));
+  // 梁底彩画：青绿叠晕的简化表达，只在梁侧贴一条色带
+  for (let i = -3; i <= 3; i++) {
+    const cz2 = zB + (i + 3) * innerD / 6;
+    addBox(W - 1.0, 0.055, 0.225, i % 2 ? IM.paintC : IM.paintB, 0, ceilY - 0.235, cz2, ceilG);
+  }
+  // 中心藻井：方井 → 八角 → 圆镜，三层收分
   const cw = Math.min(4.4, W * 0.30), cd = Math.min(4.4, innerD * 0.62);
-  addBox(cw + 0.5, 0.12, cd + 0.5, IM.wood, 0, ceilY - 0.16, innerCZ, cut);
-  addCyl(cw * 0.42, cw * 0.42, 0.10, IM.trim, 8, 0, ceilY - 0.25, innerCZ, cut);
-  addCyl(0.55, 0.55, 0.05, IM.goldLight, 24, 0, ceilY - 0.34, innerCZ, cut);
+  addBox(cw + 0.9, 0.09, cd + 0.9, IM.paintC, 0, ceilY - 0.22, innerCZ, ceilG);
+  addBox(cw + 0.5, 0.12, cd + 0.5, IM.wood, 0, ceilY - 0.30, innerCZ, ceilG);
+  addBox(cw + 0.2, 0.10, cd + 0.2, IM.paintB, 0, ceilY - 0.38, innerCZ, ceilG);
+  addCyl(cw * 0.42, cw * 0.42, 0.10, IM.trim, 8, 0, ceilY - 0.45, innerCZ, ceilG);
+  addCyl(cw * 0.30, cw * 0.30, 0.08, IM.gold, 8, 0, ceilY - 0.52, innerCZ, ceilG);
+  addCyl(0.55, 0.55, 0.05, IM.goldLight, 24, 0, ceilY - 0.58, innerCZ, ceilG);
 
-  // 5) 后部佛坛（须弥座）+ 大幅壁画背屏 + 金色主尊：法堂视觉中心
+  // 5) 后部佛坛（五层须弥座）+ 壁画背屏 + 造像群（按殿别配置，殿内近观的主体）
   const az = zB + Math.min(1.55, innerD * 0.22);
   const aw = Math.min(W * 0.60, 15.0);
   const by = F + 0.64;                       // 佛坛顶面
-  addBox(aw + 1.0, 0.20, 2.6, IM.altar, 0, F + 0.10, az);
-  addBox(aw + 0.4, 0.34, 2.3, IM.altar, 0, F + 0.37, az);
-  addBox(aw + 0.6, 0.10, 2.5, IM.altarTop, 0, F + 0.59, az);
-  const sw = Math.min(aw * 0.94, W * 0.62);
-  const sh = Math.min(Math.max(3.0, H * 0.62), 5.4);
-  const sy = F + 0.45 + sh / 2;
-  addBox(sw + 0.30, sh + 0.30, 0.20, IM.trim, 0, sy, zB + 0.26);
-  add(new T.PlaneGeometry(sw, sh), IM.mural, 0, sy, zB + 0.38);
-  addBox(sw + 0.46, 0.14, 0.34, IM.trim, 0, sy + sh / 2 + 0.10, zB + 0.40);
-  addBox(sw + 0.46, 0.14, 0.34, IM.trim, 0, sy - sh / 2 - 0.10, zB + 0.40);
-  [-sw / 2 - 0.12, sw / 2 + 0.12].forEach(x =>
-    addBox(0.14, sh + 0.30, 0.34, IM.trim, x, sy, zB + 0.40));
-  // 立体圆光（壁画前、主尊后）
-  const haloY = Math.min(sy + sh * 0.20, by + 2.05);
-  add(new T.TorusGeometry(1.35, 0.09, 8, 28), IM.gold, 0, haloY, zB + 0.58);
-  add(new T.CircleGeometry(1.28, 28), IM.goldLight, 0, haloY, zB + 0.54);
-  // 金色坐佛：莲座 → 盘腿 → 身 → 手 → 头 → 肉髻，面向殿门（+Z）
-  const sz = az - 0.40;
-  addCyl(1.12, 1.28, 0.24, IM.gold, 16, 0, by + 0.12, sz);
-  for (let i = 0; i < 8; i++) {
-    const a = i * Math.PI / 4;
-    const petal = add(new T.SphereGeometry(0.34, 6, 4), IM.goldLight,
-      Math.cos(a) * 1.12, by + 0.32, sz + Math.sin(a) * 1.12);
-    petal.scale.set(1, 0.32, 0.58);
+  if (!spec.furnish) {
+    addBox(aw + 1.10, 0.16, 2.70, IM.base,     0, F + 0.08, az);   // 下枋
+    addBox(aw + 1.00, 0.10, 2.62, IM.altarTop, 0, F + 0.21, az);   // 下枭
+    addBox(aw + 0.66, 0.26, 2.34, IM.altar,    0, F + 0.39, az);   // 束腰（内收）
+    addBox(aw + 1.00, 0.06, 2.58, IM.trim,     0, F + 0.55, az);   // 上枭
+    addBox(aw + 1.06, 0.07, 2.64, IM.altarTop, 0, F + 0.605, az);  // 上枋
+    const sw = Math.min(aw * 0.94, W * 0.62);
+    // 背屏通到梁下：原先封顶 5.4 m，其上是一整片素墙，殿内视角抬头就露白
+    const sh = Math.min(Math.max(3.0, ceilY - F - 1.45), 8.8);
+    const sy = F + 0.45 + sh / 2;
+    addBox(sw + 0.30, sh + 0.30, 0.20, IM.trim, 0, sy, zB + 0.26);
+    add(new T.PlaneGeometry(sw, sh), IM.mural, 0, sy, zB + 0.38);
+    addBox(sw + 0.46, 0.14, 0.34, IM.trim, 0, sy + sh / 2 + 0.10, zB + 0.40);
+    addBox(sw + 0.46, 0.14, 0.34, IM.trim, 0, sy - sh / 2 - 0.10, zB + 0.40);
+    [-sw / 2 - 0.12, sw / 2 + 0.12].forEach(x =>
+      addBox(0.14, sh + 0.30, 0.34, IM.trim, x, sy, zB + 0.40));
+    // 壁画上方加一道横枋与两侧立颊，让背屏收边（不再另设圆光，佛像自带背光）
+    addBox(sw + 0.62, 0.16, 0.26, IM.beam, 0, sy + sh / 2 + 0.34, zB + 0.44);
+  } else {
+    // 功能房（祖堂 / 五观堂 / 客堂 / 廊庑）：不设佛坛，后墙改通长经柜 + 案桌
+    addBox(aw + 0.8, 2.30, 0.55, IM.wood, 0, F + 1.15, zB + 0.55);
+    const nSh = Math.max(6, Math.round((aw + 0.6) / 0.62));
+    for (let i = 0; i <= nSh; i++) {
+      addBox(0.05, 2.20, 0.56, IM.screen, -(aw + 0.6) / 2 + i * (aw + 0.6) / nSh, F + 1.15, zB + 0.55);
+    }
+    [0.62, 1.36, 2.02].forEach(y =>
+      addBox(aw + 0.86, 0.08, 0.60, IM.trim, 0, F + y, zB + 0.55));
+    // 案桌：长条木案 + 文房 / 茶器
+    addBox(aw * 0.86, 0.13, 1.05, IM.wood, 0, F + 0.84, az - 0.30);
+    [-1, 1].forEach(s =>
+      addBox(0.14, 0.80, 0.14, IM.wood, s * (aw * 0.40), F + 0.40, az - 0.30));
+    addCyl(0.16, 0.13, 0.24, IM.bronze, 10, 0, F + 1.03, az - 0.30);
   }
-  addCyl(0.92, 1.02, 0.18, IM.gold, 14, 0, by + 0.44, sz);
-  const legs = add(new T.SphereGeometry(0.96, 10, 6), IM.gold, 0, by + 0.66, sz + 0.14);
-  legs.scale.set(1.18, 0.42, 0.82);
-  const torso = add(new T.SphereGeometry(0.80, 12, 8), IM.gold, 0, by + 1.30, sz);
-  torso.scale.set(1, 1.02, 0.66);
-  const hands = add(new T.SphereGeometry(0.30, 8, 6), IM.goldLight, 0, by + 1.08, sz + 0.58);
-  hands.scale.set(1.20, 0.48, 0.65);
-  add(new T.SphereGeometry(0.46, 12, 8), IM.gold, 0, by + 2.10, sz);
-  add(new T.SphereGeometry(0.21, 8, 6), IM.goldLight, 0, by + 2.50, sz);
-  [-1, 1].forEach(s => {
-    const ear = add(new T.SphereGeometry(0.16, 6, 4), IM.gold, s * 0.46, by + 2.05, sz + 0.02);
-    ear.scale.set(0.5, 1.3, 0.6);
-  });
 
-  // 6) 供桌 / 香炉 / 莲花灯
+  /* ---- 造像工厂 -----------------------------------------------------------
+   * 六种尊格共用一套骨架（座 → 腿/裙 → 躯干 → 臂 → 头），只在首冠、坐姿、
+   * 衣饰、法器的岔口上分叉。总高 h 是连座高度，全部比例由 h 推导，
+   * 因此同一份代码可同时服务 2.8 米的主尊与 1.4 米的胁侍。
+   * ----------------------------------------------------------------------- */
+  const MK = {
+    buddha:      { robe: IM.gold,      skin: IM.gold,      crown: 'ushnisha', halo: 1 },
+    medicine:    { robe: IM.gold,      skin: IM.gold,      crown: 'ushnisha', halo: 1, bowl: 1 },
+    bodhisattva: { robe: IM.goldLight, skin: IM.goldLight, crown: 'tiara',    halo: 1 },
+    waterMoon:   { robe: IM.goldLight, skin: IM.goldLight, crown: 'tiara',    halo: 1, vase: 1 },
+    maitreya:    { robe: IM.gold,      skin: IM.goldLight, crown: 'bald',     halo: 1, belly: 1 },
+    disciple:    { robe: IM.gold,      skin: IM.gold,      crown: 'bald',     halo: 0 },
+    attendant:   { robe: IM.cloth,     skin: IM.goldLight, crown: 'bun',      halo: 0 },
+    guardian:    { robe: IM.paintC,    skin: IM.gold,      crown: 'helmet',   halo: 0, armor: 1 },
+    weiTuo:      { robe: IM.paintC,    skin: IM.gold,      crown: 'helmet',   halo: 0, armor: 1 },
+    dragonKing:  { robe: IM.paintB,    skin: IM.goldLight, crown: 'crown',    halo: 0, hu: 1 },
+    wealth:      { robe: IM.clothR,    skin: IM.goldLight, crown: 'crown',    halo: 0, ingot: 1 },
+  };
+  const STANDING = ['disciple', 'attendant', 'guardian', 'weiTuo', 'dragonKing', 'wealth'];
+  const sz = az - 0.40;
+  function deity(d) {
+    const mark = inner.children.length;   // 供 ry 收组用
+    const kind = d.kind || 'buddha';
+    const P = MK[kind] || MK.buddha;
+    const h = d.h || 2.4;
+    const px = d.x || 0;
+    const pz = az + (d.dz === undefined ? -0.40 : d.dz);
+    const standing = STANDING.indexOf(kind) >= 0;
+    const bh0 = standing ? h * 0.07 : h * 0.19;      // 台座高
+    const bR = Math.min(h * 0.33, 1.02);              // 座盘半径：不得撑出佛坛
+    /* ---- 须弥座 + 莲台 ----
+     * 三层收分（下枭 / 束腰 / 上枋）外面围一圈仰莲瓣。原先用压扁球当花瓣，
+     * 正面只剩几颗凸点；改成向外倾的锥体，莲瓣才有「开」的意思。 */
+    addCyl(bR * 0.94, bR, bh0 * 0.34, IM.base, 18, px, by + bh0 * 0.17, pz);
+    addCyl(bR * 0.70, bR * 0.90, bh0 * 0.28, IM.altar, 18, px, by + bh0 * 0.46, pz);
+    addCyl(bR * 0.99, bR * 0.90, bh0 * 0.26, IM.altarTop, 18, px, by + bh0 * 0.73, pz);
+    const nP = standing ? 12 : 16;
+    for (let i = 0; i < nP; i++) {
+      const a = i * Math.PI * 2 / nP;
+      const petal = add(new T.ConeGeometry(bR * 0.185, bh0 * 0.46, 4), IM.goldLight,
+        px + Math.cos(a) * bR * 0.80, by + bh0 * 0.92, pz + Math.sin(a) * bR * 0.80);
+      petal.rotation.y = -a;
+      petal.rotation.z = -0.26;                       // 外倾（局部 +x 恒为径向）
+    }
+    const y0 = by + bh0;                              // 像底
+    const HH = h - bh0;                               // 像高
+    const hr = HH * (standing ? 0.106 : 0.124);       // 头半径（坐像头略放大，别被宽肩吃掉）
+    const headY = y0 + HH * (standing ? 0.858 : 0.775);
+    // 下身：立像留给裙裾，坐像给结跏趺坐（盘腿不外撑座盘）
+    if (standing) {
+      const skirt = addCyl(HH * 0.145, HH * 0.215, HH * 0.42, P.robe, 12, px, y0 + HH * 0.21, pz);
+      skirt.scale.z = 0.80;
+      [-1, 1].forEach(s =>
+        addBox(HH * 0.080, HH * 0.042, HH * 0.155, P.skin,
+          px + s * HH * 0.070, y0 + HH * 0.021, pz + HH * 0.045));
+    } else {
+      const lap = add(new T.SphereGeometry(Math.min(bR * 0.90, HH * 0.30), 16, 8), P.robe,
+        px, y0 + HH * 0.085, pz + HH * 0.035);
+      lap.scale.set(1.10, 0.36, 0.80);
+      [-1, 1].forEach(s => {                          // 双膝
+        const kn = add(new T.SphereGeometry(HH * 0.098, 10, 8), P.robe,
+          px + s * HH * 0.205, y0 + HH * 0.105, pz + HH * 0.075);
+        kn.scale.set(1, 0.90, 1.12);
+      });
+      addBox(HH * 0.34, HH * 0.085, HH * 0.13, P.robe, px, y0 + HH * 0.118, pz + HH * 0.138);
+    }
+    /* 躯干：LatheGeometry 沿半径剖面旋转。关键是 88% 高度处最宽、再急收为颈根——
+     * 有肩线才像「人」；原先剖面在中段最宽、往上收到很细，读起来是一截花瓶。 */
+    const torsoH = standing ? HH * 0.455 : HH * 0.49;
+    const torsoBot = standing ? y0 + HH * 0.30 : y0 + HH * 0.135;
+    const torsoY = torsoBot + torsoH * 0.5;
+    const prof = [
+      [0.052, 0.00], [0.150, 0.04], [0.190, 0.18], [0.206, 0.42],
+      [0.212, 0.62], [0.226, 0.80], [0.230, 0.89], [0.192, 0.945],
+      [0.108, 0.98], [0.072, 1.00],
+    ].map((q) => new T.Vector2(HH * q[0], torsoH * q[1]));
+    const torso = add(new T.LatheGeometry(prof, 22), P.robe, px, torsoBot, pz);
+    torso.scale.z = 0.74;
+    // 颈：短而粗，先前的 0.14 HH 长脖子把头像顶成一根签子
+    addCyl(HH * 0.058, HH * 0.072, HH * 0.09, P.skin, 10,
+      px, torsoBot + torsoH + HH * 0.035, pz);
+    /* 双臂：肩球 + 上臂 + 前臂。手臂半径中心从 HH*0.248 外移到 HH*0.288，
+     * 否则整个上臂埋进躯干，正面只剩两条缝。坐像前臂内收结禅定印。 */
+    const shY = torsoBot + torsoH * 0.90;
+    [-1, 1].forEach(s => {
+      const ax = px + s * HH * 0.288;
+      const sh = add(new T.SphereGeometry(HH * 0.082, 10, 8), P.robe, ax, shY, pz);
+      sh.scale.set(1, 1.05, 0.92);
+      const armLen = HH * (standing ? 0.40 : 0.36);
+      const arm = addCyl(HH * 0.052, HH * 0.060, armLen, P.robe, 10,
+        ax, shY - armLen * 0.46, pz + HH * 0.006);
+      arm.rotation.z = s * (standing ? 0.10 : 0.16);
+      const elY = shY - armLen * 0.92;
+      if (standing) {
+        addCyl(HH * 0.048, HH * 0.052, HH * 0.17, P.skin, 8,
+          ax + s * HH * 0.012, elY - HH * 0.075, pz + HH * 0.02);
+        const hn = add(new T.SphereGeometry(HH * 0.054, 8, 6), P.skin,
+          ax + s * HH * 0.018, elY - HH * 0.16, pz + HH * 0.035);
+        hn.scale.set(1, 1.15, 1.05);
+      } else {
+        const fa = addCyl(HH * 0.045, HH * 0.049, HH * 0.22, P.skin, 8,
+          ax - s * HH * 0.045, elY - HH * 0.02, pz + HH * 0.155);
+        fa.rotation.z = s * 0.80;
+        fa.rotation.x = -0.30;
+        const hn = add(new T.SphereGeometry(HH * 0.058, 8, 6), P.skin,
+          px + s * HH * 0.035, elY - HH * 0.075, pz + HH * 0.185);
+        hn.scale.set(1.10, 0.62, 1.20);
+      }
+    });
+    // 衣纹：躯干正面三道浅褶（整圈会把身体切成节）
+    (standing ? [0.22, 0.38] : [0.22, 0.34, 0.46]).forEach((k, i) => {
+      const rr = add(new T.TorusGeometry(HH * 0.214 * (1 - i * 0.05), HH * 0.0075, 6, 22), IM.trim,
+        px, torsoBot + torsoH * k, pz + HH * 0.010);
+      rr.rotation.x = Math.PI / 2;
+      rr.scale.z = 0.76;
+    });
+    // 袈裟斜披（右肩 → 左腰）
+    if (kind === 'buddha' || kind === 'medicine' || kind === 'maitreya') {
+      const sash = addBox(HH * 0.075, torsoH * 0.60, HH * 0.016, IM.clothR,
+        px + HH * 0.072, torsoBot + torsoH * 0.55, pz + HH * 0.152);
+      sash.rotation.z = 0.40;
+    }
+    // 头 + 耳（沿 z 略压扁，正面更接近东方面相）
+    const head = add(new T.SphereGeometry(hr, 14, 10), P.skin, px, headY, pz);
+    head.scale.set(1, 1.06, 0.94);
+    [-1, 1].forEach(s => {
+      const e = add(new T.SphereGeometry(hr * 0.28, 6, 5), P.skin, px + s * hr * 0.94, headY - hr * 0.06, pz);
+      e.scale.set(0.40, 1.20, 0.55);
+    });
+    // 面部：眼 / 唇（只在高度足够的像上，否则远看糊成一团）
+    if (h > 2.2) {
+      [-1, 1].forEach(s =>
+        addBox(hr * 0.32, hr * 0.075, hr * 0.05, IM.screen, px + s * hr * 0.34, headY + hr * 0.12, pz + hr * 0.86));
+      addBox(hr * 0.26, hr * 0.045, hr * 0.04, IM.clothR, px, headY - hr * 0.36, pz + hr * 0.88);
+    }
+    // 首冠 / 肉髻
+    if (P.crown === 'ushnisha') {
+      add(new T.SphereGeometry(hr * 0.46, 10, 8), P.skin, px, headY + hr * 0.92, pz);
+      for (let i = 0; i < 12; i++) {                  // 螺髻
+        const a = i * 2.399, r = hr * (0.30 + (i % 3) * 0.26);
+        add(new T.SphereGeometry(hr * 0.145, 6, 5), P.skin,
+          px + Math.cos(a) * r, headY + hr * 0.56 + (i % 4) * hr * 0.115, pz + Math.sin(a) * r * 0.9);
+      }
+    } else if (P.crown === 'tiara' || P.crown === 'crown') {
+      addBox(hr * 2.02, hr * 0.32, hr * 1.86, IM.gold, px, headY + hr * 0.70, pz);
+      [-0.62, 0, 0.62].forEach((k, i) => {
+        const cone = add(new T.ConeGeometry(hr * 0.30, hr * (0.66 - Math.abs(k) * 0.22), 6),
+          P.crown === 'crown' ? IM.goldLight : IM.gold, px + k * hr, headY + hr * 0.98, pz);
+        if (i === 1) cone.position.y += hr * 0.09;
+      });
+    } else if (P.crown === 'helmet') {
+      const hm = add(new T.SphereGeometry(hr * 1.08, 12, 8), IM.trim, px, headY + hr * 0.32, pz);
+      hm.scale.set(1, 0.85, 1);
+      addCyl(hr * 0.10, hr * 0.16, hr * 0.5, IM.clothR, 8, px, headY + hr * 1.30, pz);
+      [-1, 1].forEach(s => addBox(hr * 0.3, hr * 0.9, hr * 0.08, IM.trim, px + s * hr * 0.94, headY - hr * 0.3, pz));
+    } else if (P.crown === 'bun') {
+      add(new T.SphereGeometry(hr * 0.44, 8, 6), P.skin, px, headY + hr * 0.90, pz);
+      addBox(hr * 1.66, hr * 0.15, hr * 1.54, IM.clothR, px, headY + hr * 0.52, pz);
+    }
+    // 背光：金环 + 光盘 + 外圈细环，贴在背屏前一层，是殿内的视觉焦点
+    if (P.halo) {
+      const hy = headY + hr * 0.14;
+      add(new T.CircleGeometry(hr * 1.95, 30), IM.goldLight, px, hy, pz - hr * 1.00);
+      add(new T.TorusGeometry(hr * 2.06, hr * 0.105, 8, 30), IM.gold, px, hy, pz - hr * 0.96);
+      add(new T.TorusGeometry(hr * 2.56, hr * 0.045, 6, 32), IM.trim, px, hy, pz - hr * 0.92);
+    }
+    // 璎珞 / 天衣（菩萨）
+    if (kind === 'bodhisattva' || kind === 'waterMoon') {
+      const ring2 = add(new T.TorusGeometry(HH * 0.118, HH * 0.011, 6, 20), IM.goldLight,
+        px, torsoY - HH * 0.03, pz + HH * 0.03);
+      ring2.rotation.x = 1.32;
+      [-1, 1].forEach(s =>
+        addBox(HH * 0.045, HH * 0.32, HH * 0.02, IM.goldLight,
+          px + s * HH * 0.19, torsoY - HH * 0.13, pz - HH * 0.02));
+    }
+    // 法器 / 持物
+    if (P.bowl) addCyl(HH * 0.07, HH * 0.05, HH * 0.06, IM.goldLight, 10, px, torsoY - torsoH * 0.42, pz + HH * 0.12);
+    if (P.vase) addCyl(HH * 0.05, HH * 0.065, HH * 0.16, IM.bronze, 10, px - HH * 0.26, torsoY - torsoH * 0.40, pz + HH * 0.10);
+    if (P.hu) addBox(HH * 0.05, HH * 0.34, HH * 0.02, IM.goldLight, px, torsoY - HH * 0.02, pz + HH * 0.17);
+    if (P.ingot) {
+      const ig = add(new T.SphereGeometry(HH * 0.09, 8, 6), IM.gold, px + HH * 0.26, torsoY - torsoH * 0.46, pz + HH * 0.10);
+      ig.scale.set(1.25, 0.62, 0.9);
+    }
+    /* 整体朝向：deity 是逐件往 inner 里塞的，用「本次新增子节点」反收进一个组，
+     * 再对组做旋转 —— 这样韦陀这类背向门口的像不必重写坐标。 */
+    if (d.ry) {
+      const g = new T.Group();
+      g.position.set(px, 0, pz);
+      g.rotation.y = d.ry;
+      inner.children.slice(mark).forEach((m) => {
+        inner.remove(m);
+        m.position.x -= px;
+        m.position.z -= pz;
+        g.add(m);
+      });
+      inner.add(g);
+    }
+    return { px, pz, h };
+  }
+
+  const pantheon = spec.pantheon ||
+    [{ kind: 'buddha', h: Math.min(3.0, H * 0.30), main: true }];
+  const mains = [];
+  pantheon.forEach((d) => { const r = deity(d); if (d.main) mains.push(r); });
+
+
+  // 6) 供桌 / 五供（香炉 · 烛台 · 花瓶 · 供果）+ 桌围锦
   const tz = Math.min(az + 1.75, zF - 1.0);
   const tw = Math.min(aw * 0.72, 8.2);
+  if (!spec.furnish) {
   addBox(tw, 0.16, 0.90, IM.wood, 0, F + 0.78, tz);
   [-1, 1].forEach(s =>
     addBox(0.16, 0.72, 0.16, IM.wood, s * (tw / 2 - 0.22), F + 0.40, tz));
+  // 桌围：正面与两端垂红锦，殿内近看时供桌不再是光板
+  addBox(tw - 0.08, 0.58, 0.03, IM.clothR, 0, F + 0.49, tz + 0.47);
+  addBox(tw - 0.20, 0.06, 0.04, IM.gold, 0, F + 0.76, tz + 0.48);
+  [-1, 1].forEach(s =>
+    addBox(0.03, 0.58, 0.86, IM.clothR, s * (tw / 2 - 0.02), F + 0.49, tz));
   addCyl(0.40, 0.34, 0.34, IM.bronze, 14, 0, F + 1.03, tz);
   addRing(0.42, 0.05, IM.gold, 0, F + 1.21, tz);
+  add(new T.SphereGeometry(0.16, 8, 6), IM.goldLight, 0, F + 1.30, tz);
   [-1, 1].forEach(s => {
     const lx = s * (tw / 2 - 0.95);
     addCyl(0.09, 0.13, 0.55, IM.bronze, 10, lx, F + 1.05, tz);
     add(new T.SphereGeometry(0.21, 8, 6), IM.lamp, lx, F + 1.42, tz);
   });
+  // 花瓶一对 + 供果三盘
+  [-1, 1].forEach(s => {
+    const vx = s * Math.min(tw / 2 - 1.80, 2.6);
+    addCyl(0.10, 0.14, 0.46, IM.bronze, 10, vx, F + 1.09, tz);
+    const bloom = add(new T.SphereGeometry(0.17, 8, 6), IM.leaf, vx, F + 1.42, tz);
+    bloom.scale.set(1.15, 0.92, 1);
+    add(new T.SphereGeometry(0.07, 6, 5), IM.clothR, vx, F + 1.55, tz);
+  });
+  [-1, 0, 1].forEach((k) => {
+    const fx = k * Math.min(1.15, tw * 0.16);
+    addCyl(0.20, 0.16, 0.05, IM.altarTop, 8, fx, F + 0.90, tz);
+    [-1, 1].forEach(s => {
+      const fr = add(new T.SphereGeometry(0.095, 8, 6), IM.fruit, fx + s * 0.085, F + 0.98, tz + s * 0.04);
+      fr.scale.set(1, 0.9, 1);
+    });
+  });
+
+  // 6b) 幡：自天花垂下，殿内视角的纵向标尺（也补齐佛坛两侧的空白）
+  const bannerX = Math.min(innerW / 2 - 1.0, aw / 2 + 1.5);
+  [-1, 1].forEach(s => {
+    const bx = s * bannerX, bz2 = az + 0.35;
+    addCyl(0.035, 0.035, 1.05, IM.wood, 6, bx, ceilY - 0.60, bz2);
+    addBox(0.98, 0.10, 0.06, IM.clothR, bx, ceilY - 1.15, bz2);
+    const bh2 = Math.max(1.6, ceilY - 1.25 - (F + 2.15));
+    addBox(0.86, bh2, 0.03, IM.cloth, bx, F + 2.15 + bh2 / 2, bz2);
+    addBox(0.92, 0.12, 0.05, IM.gold, bx, F + 2.15, bz2);
+    addBox(0.10, 0.42, 0.04, IM.clothR, bx - 0.34, F + 1.95, bz2);
+    addBox(0.10, 0.42, 0.04, IM.clothR, bx + 0.34, F + 1.95, bz2);
+  });
+  }
 
   // 7) 侧案：木鱼 + 念珠（参考韩国山寺法堂的两件静心器物）
   const sideZ = zB + innerD * 0.66;
   const sideX = innerW / 2 - 1.15;
-  [-1, 1].forEach(s => {
+  if (!spec.furnish) [-1, 1].forEach(s => {
     const sx = s * sideX;
     addBox(1.5, 0.12, 0.90, IM.wood, sx, F + 0.72, sideZ);
     addBox(0.10, 0.66, 0.10, IM.wood, sx - 0.55, F + 0.39, sideZ);
     addBox(0.10, 0.66, 0.10, IM.wood, sx + 0.55, F + 0.39, sideZ);
   });
-  const mok = add(new T.SphereGeometry(0.40, 10, 8), IM.bead, -sideX, F + 1.00, sideZ);
-  mok.scale.set(1.10, 0.78, 0.90);
-  addBox(0.42, 0.09, 0.07, IM.screen, -sideX, F + 1.00, sideZ + 0.37);
-  const stick = addCyl(0.045, 0.045, 0.62, IM.wood, 8, -sideX + 0.60, F + 1.02, sideZ);
-  stick.rotation.z = Math.PI / 2;
-  addRing(0.34, 0.035, IM.bead, sideX, F + 0.84, sideZ);
-  add(new T.SphereGeometry(0.11, 8, 6), IM.goldLight, sideX, F + 0.84, sideZ + 0.34);
+  if (!spec.furnish) {
+    const mok = add(new T.SphereGeometry(0.40, 10, 8), IM.bead, -sideX, F + 1.00, sideZ);
+    mok.scale.set(1.10, 0.78, 0.90);
+    addBox(0.42, 0.09, 0.07, IM.screen, -sideX, F + 1.00, sideZ + 0.37);
+    const stick = addCyl(0.045, 0.045, 0.62, IM.wood, 8, -sideX + 0.60, F + 1.02, sideZ);
+    stick.rotation.z = Math.PI / 2;
+    addRing(0.34, 0.035, IM.bead, sideX, F + 0.84, sideZ);
+    add(new T.SphereGeometry(0.11, 8, 6), IM.goldLight, sideX, F + 0.84, sideZ + 0.34);
+  }
 
   // 8) 成排灰色蒲团：按内室面积自适应行列，中央留拜道（法堂容量扩容）
   const seatEnd = zF - 0.55;
   const span = Math.max(0, seatEnd - (tz + 1.05));
-  const rows = Math.max(1, Math.min(grand ? 5 : 3, Math.floor(span / 1.55) + 1));
-  const rowGap = rows > 1 ? Math.min(1.62, span / (rows - 1)) : 0;
-  const cols = Math.max(3, Math.min(grand ? 11 : 7, Math.floor((innerW - 1.5) / 1.6) + 1));
-  const colGap = Math.min(1.62, (innerW - 1.5) / Math.max(1, cols - 1));
   const seats = [];
-  for (let r = 0; r < rows; r++) {
-    const pz = seatEnd - r * rowGap;
-    for (let c = 0; c < cols; c++) {
-      const dx = (c - (cols - 1) / 2) * colGap;
-      if (Math.abs(dx) < 1.05) continue;                  // 中央拜道
-      if (Math.abs(dx) + 0.56 > innerW / 2 - 0.2) continue;
-      seats.push({ dx, pz });
+  if (!spec.noSeats) {
+    const rows = Math.max(1, Math.min(grand ? 5 : 3, Math.floor(span / 1.55) + 1));
+    const rowGap = rows > 1 ? Math.min(1.62, span / (rows - 1)) : 0;
+    const cols = Math.max(3, Math.min(grand ? 11 : 7, Math.floor((innerW - 1.5) / 1.6) + 1));
+    const colGap = Math.min(1.62, (innerW - 1.5) / Math.max(1, cols - 1));
+    for (let r = 0; r < rows; r++) {
+      const pz = seatEnd - r * rowGap;
+      for (let c = 0; c < cols; c++) {
+        const dx = (c - (cols - 1) / 2) * colGap;
+        if (Math.abs(dx) < 1.05) continue;                // 中央拜道
+        if (Math.abs(dx) + 0.56 > innerW / 2 - 0.2) continue;
+        seats.push({ dx, pz });
+      }
     }
   }
   // 全寺 268 个蒲团以 InstancedMesh 批量绘制，运行时每殿仅 2 次 drawcall；
@@ -650,14 +1044,17 @@ function buildInterior(group, spec, id, baseY) {
     inner.add(im);
   };
   if (seats.length) {
-    instSeats(new T.BoxGeometry(1.04, 0.045, 1.04), IM.mat, F + 0.03);
-    instSeats(new T.CylinderGeometry(0.50, 0.52, 0.16, 12), IM.cushion, F + 0.13);
+    // 拜垫尺度按真实蒲团取 0.66 m：原先 1.0 m 直径在殿内视角里像一片灰色圆盘铺地
+    instSeats(new T.BoxGeometry(0.72, 0.04, 0.72), IM.mat, F + 0.03);
+    instSeats(new T.CylinderGeometry(0.33, 0.35, 0.13, 12), IM.cushion, F + 0.105);
   }
 
   // 9) 锚点注册（世界坐标，含高台 baseY 偏移；蒲团附朝向与座号）
   REG.anchors.push(
     { hallId: id, kind: 'altar',   ...world(0, by, az) },
-    { hallId: id, kind: 'statue',  ...world(0, by, sz) },
+    { hallId: id, kind: 'statue',
+      ...world(mains.length ? mains[0].px : 0, by,
+               mains.length ? mains[0].pz : sz) },
     { hallId: id, kind: 'incense', ...world(0, F + 0.86, tz) },
     { hallId: id, kind: 'mural',   ...world(0, F + 1.2, zB + 0.5) },
     { hallId: id, kind: 'moktak',  ...world(-sideX, F + 0.78, sideZ) },
@@ -687,15 +1084,28 @@ function buildInterior(group, spec, id, baseY) {
 
   const body = toAABB(0, (spec.bodyFront + spec.bodyBack) / 2,
     W + 0.6, spec.bodyFront - spec.bodyBack);
+  // 殿内不可穿越的实体：佛坛（含须弥座外沿）、供案、经柜
+  const blocks = [];
+  if (!spec.furnish) {
+    blocks.push(toAABB(0, az, aw + 1.2, 2.8));
+    blocks.push(toAABB(0, tz, tw + 0.2, 1.0));
+  } else {
+    blocks.push(toAABB(0, zB + 0.55, aw + 0.9, 0.7));
+    blocks.push(toAABB(0, az - 0.30, aw * 0.86, 1.2));
+  }
+
   REG.boxes.push({
     id,
     x: (body.x0 + body.x1) / 2, z: (body.z0 + body.z1) / 2,
     width: body.x1 - body.x0, depth: body.z1 - body.z0,
     baseY, floorY: baseY + F,
+    ceilY: baseY + ceilY,
+    innerW, innerD,
     walls: rects.map(r => toAABB(r.x, r.z, r.w, r.d)),
+    blocks,
     inner: toAABB(0, innerCZ, innerW, innerD),
   });
-  return { cut, inner };
+  return { cut, ceil: ceilG, front: frontG, inner };
 }
 
 /** 带中央券洞的墙（前墙 / 后墙共用） */
@@ -724,6 +1134,7 @@ function makeHall(s, baseY, id) {
     W, H, top, floorY: F,
     frontWallZ: wallZ, backWallZ: backZ, doorHalf,
     backDoor: true, bodyFront: frontZ + 1.25, bodyBack: backZ - 0.35,
+    pantheon: PANTHEON[id],
   }, id, y0);
 
   // 台基 + 踏道
@@ -747,16 +1158,16 @@ function makeHall(s, baseY, id) {
   doors.forEach(d => shape.holes.push(archShape(d.x, d.w, d.h)));
   const frontWall = makeMesh(new T.ExtrudeGeometry(shape,
     { depth: 0.5, bevelEnabled: false, curveSegments: 16 }), M.wall, 0, top, wallZ);
-  IT.cut.add(frontWall);   // 入殿剖视时隐藏前墙，避免挡住室内
+  IT.front.add(frontWall);  // 前墙单列：俯瞰掀盖时隐藏，殿内视角必须保留
   doors.forEach(d => {
     if (!d.open) {
       const sh = archShape(d.x, d.w - 0.06, d.h - 0.03);
       const dk = new T.ShapeGeometry(sh, 16); remapShapeUV(dk, d.w, d.h);
-      IT.cut.add(makeMesh(dk, M.ink, 0, top, wallZ + 0.47, false));
+      IT.front.add(makeMesh(dk, M.ink, 0, top, wallZ + 0.47, false));
       const lat = new T.ShapeGeometry(sh, 16); remapShapeUV(lat, d.w, d.h);
       const lm = M.lattice.clone();
       lm.map = latticeTex.clone(); lm.map.repeat.set(2.0, 2.4); lm.map.needsUpdate = true;
-      IT.cut.add(makeMesh(lat, lm, 0, top, wallZ + 0.49, false));
+      IT.front.add(makeMesh(lat, lm, 0, top, wallZ + 0.49, false));
     }
     const pts = archOutline(d.x, d.w + 0.06, d.h + 0.03)
       .map(p => new T.Vector3(p[0], p[1] + top, wallZ + 0.55));
@@ -766,7 +1177,8 @@ function makeHall(s, baseY, id) {
   // 侧墙 / 后墙（后墙开中央券门，贯通中轴御道）
   g.add(box(0.5, H, D, M.wallShade, -W / 2 - 0.2, top + H / 2, 0));
   g.add(box(0.5, H, D, M.wallShade, W / 2 + 0.2, top + H / 2, 0));
-  g.add(makeDoorWall(W, H, 3.0, doorH + 0.20, top, backZ, M.wallShade, 0.5));
+  // 后门压到 4.6 米：原 H*0.72 在殿内看是半片天空，且小门更合寺观后门之制
+  g.add(makeDoorWall(W, H, 3.0, Math.min(4.60, H * 0.55), top, backZ, M.wallShade, 0.5));
 
   // 前廊柱列 + 额枋 + 斗拱（斗拱是全局实例，坐标需换算到世界）
   [-3, -2, -1, 1, 2, 3].forEach(i => {
@@ -856,12 +1268,15 @@ function makeSideHall(court, side, name, baseY, id, deep) {
     frontWallZ: wallZ, backWallZ: backZ, doorHalf,
     backDoor: false, bodyFront: D / 2 + 0.8, bodyBack: -D / 2 - 0.8,
     ceilingY: SONG.colTop - 0.70,
+    pantheon: SIDE_PANTHEON[name],
+    furnish: SIDE_FURNISH[name],
+    noSeats: !!SIDE_FURNISH[name],
   }, id, baseY || 0);
 
   // 台基 + 天王殿配色：米白墙、深栗木构，前墙开中央门贯通庭院
   g.add(box(W + 1.6, 0.70, D + 1.6, M.stoneDark, 0, 0.35, 0));
   g.add(box(W + 1.8, 0.12, D + 1.8, M.stoneWhite, 0, 0.70, 0));
-  IT.cut.add(makeDoorWall(W, H1, 2.1, H1 * 0.70, top, wallZ, SM.wall, 0.30));
+  IT.front.add(makeDoorWall(W, H1, 2.1, H1 * 0.70, top, wallZ, SM.wall, 0.30));
   g.add(box(0.30, H1, D, SM.wallShade, -W / 2 - 0.15, top + H1 / 2, 0));
   g.add(box(0.30, H1, D, SM.wallShade, W / 2 + 0.15, top + H1 / 2, 0));
   g.add(box(W, H1, 0.30, SM.wallShade, 0, top + H1 / 2, backZ));

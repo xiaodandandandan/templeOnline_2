@@ -46,10 +46,21 @@
 
   /* 滚轮缩放：从贴身第三人称一路拉远到全寺俯瞰 */
   const DIST_MIN = 3.6, DIST_HOME = 9.4, DIST_MAX = 340;
+  /* 场景 OrbitControls 设了 minDistance = 12：每帧 update() 都会把球面半径钳回去。
+   * 第三人称贴身机位（离注视点仅 3~5 m）会被它整帧弹回殿外，所以先记下原值，
+   * 漫游时放开钳位，切回 orbit 观景再还原。 */
+  const ORBIT_MIN_D = controls.minDistance, ORBIT_MAX_D = controls.maxDistance;
+  function useOrbitLimits(on) {
+    controls.minDistance = on ? ORBIT_MIN_D : 0;
+    controls.maxDistance = on ? ORBIT_MAX_D : Infinity;
+  }
   let camDist = DIST_HOME, camDistTarget = DIST_HOME, lastNativeWheel = 0;
   let lastZoomSent = -1;
+  /* 入殿自动贴身 / 出殿自动回位：只有「尚未手动缩放」时才接管 */
+  let autoZoom = false;
   function applyWheel(deltaY) {
     const dy = Math.abs(deltaY) > 400 ? Math.sign(deltaY) * 400 : deltaY;
+    autoZoom = false;
     camDistTarget = clamp(camDistTarget * Math.exp(dy * 0.00145), DIST_MIN, DIST_MAX);
   }
 
@@ -204,6 +215,9 @@
 
   /** 检视钩子：供验收 / 换装工具读取人物根节点与跪拜进度（无 UI 入口） */
   window.__AVATAR__ = avatar;
+  window.__CAM__ = camera;   // 验收：读取实际机位，核对殿内视角是否落在室内盒内
+  // 验收：软件渲染时 rAF 会掉帧，截图前手动驱动一帧渲染
+  window.__RENDER_ONCE__ = function () { renderer.render(scene, camera); };
   window.__KNEEL_P__ = 1;
 
   /* 当前交互殿宇的地面光圈 */
@@ -229,6 +243,8 @@
   const KNEEL_MS = 3200;
   let lastFrame = 0;
   let nearHallId = null;
+  let inHallId = null;          // 当前所在殿（殿内视角判定）
+  let snapFrames = 0;           // 传送 / 取景后连续数帧让机位直接到位（不靠 lerp 收敛）
   const keys = Object.create(null);
   let remote = { forward: 0, turn: 0, run: false };
 
@@ -248,6 +264,16 @@
     // 抬高台面
     if (z <= L.terracePlateZ && Math.abs(x) <= 23) return 6.06;
     return 0;
+  }
+
+  /** 殿内机位距离：由室内净宽/净深反推，保证相机落在室内盒内不穿墙 */
+  function hallInteriorDist(b) {
+    const iw = b.innerW || (b.inner.x1 - b.inner.x0);
+    const id = b.innerD || (b.inner.z1 - b.inner.z0);
+    // 净深不足 8 米（山门殿 / 配殿 / 廊庑）：纵深放不下长机位，改取短距 + 大偏角，
+    // 向殿宽借空间（见 __AVATAR_UPDATE__ 里的 shallowHall 分支）
+    if (id < 8) return clamp(id * 0.62, 3.6, 4.6);
+    return clamp(Math.min(iw * 0.26, id * 0.62), 3.0, 7.4);
   }
 
   /** 所在殿宇（用于室内剖视与 HUD 提示），side_* 为四合院配殿 */
@@ -272,6 +298,13 @@
       for (let j = 0; j < walls.length; j++) {
         const w = walls[j];
         if (x > w.x0 - pad && x < w.x1 + pad && z > w.z0 - pad && z < w.z1 + pad)
+          return true;
+      }
+      // 殿内实体（佛坛 / 供案 / 经柜）：不可穿行，只能绕到两侧拜道
+      const blocks = REG.boxes[i].blocks || [];
+      for (let j = 0; j < blocks.length; j++) {
+        const w = blocks[j];
+        if (x > w.x0 - 0.30 && x < w.x1 + 0.30 && z > w.z0 - 0.30 && z < w.z1 + 0.30)
           return true;
       }
     }
@@ -433,10 +466,13 @@
     const turn = kneeling ? 0 : clamp(kt + (remote.turn || 0), -1, 1);
     const run = !!(keys.ShiftLeft || keys.ShiftRight || remote.run);
 
-    A.yaw += turn * 1.9 * dt;
+    // 入殿判定放在移动之前：殿内减速 + 机位贴身都依赖它
+    const hallNow = insideHall(A.x, A.z);
+    A.yaw += turn * (hallNow ? 1.5 : 1.9) * dt;
     A.moving = !kneeling && Math.abs(forward) > 0.02;
     if (A.moving) {
-      const speed = (run ? 10.5 : 5.8) * forward;
+      // 殿内步速降到 3.4：原速在 11 米进深的殿里一步跨过整排蒲团
+      const speed = (run ? (hallNow ? 6.2 : 10.5) : (hallNow ? 3.4 : 5.8)) * forward;
       const nx = A.x + Math.sin(A.yaw) * speed * dt;
       const nz = A.z - Math.cos(A.yaw) * speed * dt;
       if (!blocked(nx, nz)) { A.x = nx; A.z = nz; }
@@ -473,26 +509,95 @@
       arm.rotation.z = kneeling ? (i ? 0.26 : -0.26) * k : (i ? -0.04 : 0.04);
     });
 
+    // 入殿判定：进门瞬间把机位压到室内尺度，出殿（且未手动缩放）回位
+    if (hallNow && hallNow.id !== inHallId) {
+      inHallId = hallNow.id;
+      autoZoom = true;
+      camDistTarget = hallInteriorDist(hallNow);   // 每殿按自身尺度取景，不继承上一殿
+      pitch = Math.min(pitch, 0.16);   // 殿内默认近水平：佛头完整入画、上方留出梁下空间
+      snapFrames = 6;                  // 门里门外两步切换：直接切进殿内，不从墙里穿过去
+    } else if (!hallNow && inHallId) {
+      inHallId = null;
+      if (autoZoom) { camDistTarget = DIST_HOME; autoZoom = false; }
+      snapFrames = 6;
+    }
+
     // 第三人称相机：滚轮拉远时抬高俯角并把注视点移向全寺中心，形成完整鸟瞰
     camDist += (camDistTarget - camDist) * Math.min(1, dt * 6.5);
     const zp = clamp((camDist - DIST_HOME) / (DIST_MAX - DIST_HOME), 0, 1);
     const effPitch = clamp(pitch + zp * 0.95, 0.06, 1.35);
     forwardVec.set(Math.sin(A.yaw), 0, -Math.cos(A.yaw));
+    // 室内机位压到略高于头顶：视线基本水平，佛像与人物同框（航拍俯冲会切掉佛头）
+    const camLift = hallNow
+      ? 2.10 + camDist * Math.sin(effPitch) * 0.50
+      : 2.10 + camDist * Math.sin(effPitch);
     camTarget.set(A.x, A.y, A.z)
-      .addScaledVector(forwardVec, -camDist * Math.cos(effPitch))
-      .add(new T.Vector3(0, 2.1 + camDist * Math.sin(effPitch), 0));
-    camera.position.lerp(camTarget, 0.20);
-    lookTarget.set(A.x, A.y + 1.55 - k * 0.22, A.z).addScaledVector(forwardVec, 5.0);
+      .addScaledVector(forwardVec, -camDist * Math.cos(effPitch));
+    camTarget.y += camLift;
+    /* 殿内过肩机位：人物偏到画面左侧，主尊与佛坛保持居中，
+     * 否则第三人称正中机位会让方块人正好压住佛像。
+     * 浅殿（净深 < 8 m，如天王殿）纵深本就只够站人，用 24° 偏角会把相机
+     * 顶进前墙里；此时改走 52° 侧后方机位，向殿宽借空间。 */
+    const shallowHall = !!hallNow && (hallNow.innerD || 99) < 8;
+    if (hallNow) {
+      // 浅殿横向余量只有 2~3 m，偏角一大会被侧墙夹住（相机贴墙 → 人物糊满屏）
+      const yawC = A.yaw + (shallowHall ? 0.45 : 0.50);
+      const back = camDist * Math.cos(effPitch);
+      camTarget.set(A.x - Math.sin(yawC) * back, A.y + camLift, A.z + Math.cos(yawC) * back);
+    }
+    // 室内：把机位夹在净空盒内，杜绝相机穿出侧墙 / 后墙 / 天花
+    if (hallNow) {
+      const ir = hallNow.inner;
+      const pad = shallowHall ? 0.90 : 0.55;
+      const topY = (hallNow.ceilY !== undefined ? hallNow.ceilY : hallNow.floorY + 8) - 0.30;
+      // 后边界退到前墙内皮以内 1.0 m：原先浅殿放行到 z1 + 3（门外），
+      // 相机贴在墙板厚度里，画面被一片素白墙和柱身占掉半个屏幕。
+      const zBack = ir.z1 - Math.max(pad, 1.0);
+      camTarget.x = clamp(camTarget.x, ir.x0 + pad, ir.x1 - pad);
+      camTarget.z = clamp(camTarget.z, ir.z0 + pad, zBack);
+      camTarget.y = clamp(camTarget.y, hallNow.floorY + 1.00, Math.max(hallNow.floorY + 1.60, topY));
+      window.__CAM_TGT__ = { x: +camTarget.x.toFixed(2), z: +camTarget.z.toFixed(2), hall: hallNow.id };
+    } else {
+      window.__CAM_TGT__ = null;
+    }
+    // 跟随系数按 dt 归一：低帧率（软件渲染 ~6fps）时不会掉在人物身后十几米
+    camera.position.lerp(camTarget, snapFrames > 0 ? 1 : 1 - Math.exp(-dt * 14));
+    if (snapFrames > 0) snapFrames--;
+    // 殿内注视点抬到主尊胸口高度、前推一段：人物落在画面下部，佛坛完整入画
+    // 浅殿进深不足，前推 5.5 会直接穿过后墙，收到 4.0
+    lookTarget.set(A.x, A.y + (hallNow ? (shallowHall ? 2.25 : 2.45) : 1.55) - k * 0.22, A.z)
+      .addScaledVector(forwardVec, hallNow ? (shallowHall ? 3.2 : 5.5) : 5.0);
     lookTarget.lerp(TEMPLE_CENTER, zp * 0.92);
     camera.lookAt(lookTarget);
+    /* OrbitControls.update() 在 __AVATAR_UPDATE__ 之前执行，且 `enabled = false`
+     * 也照样跑：它会把相机拉回 minDistance 球面并把视线拽向旧 target。
+     * 漫游时放开钳位、把 target 同步到当前注视点，让 update() 退化成恒等变换。 */
+    useOrbitLimits(false);
+    controls.target.copy(lookTarget);
+    /* 殿内换广角：40° 长焦在 11 米进深的殿里只框得下壁画局部，
+     * 拉到 70° 才能同时看到佛坛、侧墙柱列与梁下空间。出殿平滑收回。 */
+    const fovTarget = hallNow ? (shallowHall ? 68 : 70) : 40;
+    if (Math.abs(camera.fov - fovTarget) > 0.05) {
+      camera.fov += (fovTarget - camera.fov) * (1 - Math.exp(-dt * 4));
+      camera.updateProjectionMatrix();
+    }
     controls.autoRotate = false;
     window.__ZOOM_DIST__ = +camDist.toFixed(1);
     if (!kneeling && kneelStart && marker.visible) marker.visible = false;
 
-    // 室内剖视：人物入殿且镜头贴近时，隐藏该殿屋顶 / 天花 / 前墙
-    const cutId = camDist < 46 ? (insideHall(A.x, A.z) || {}).id : null;
+    /* 剖视分级：
+     *   镜头贴身站在殿内 → 只留天花与前墙（真实室内，抬头见梁、回头见板壁）
+     *   拉远越过 24 → 屋顶 / 天花 / 前墙一起掀开，俯瞰直接看进殿内 */
+    const cutId = hallNow && camDist > 24 ? hallNow.id : null;
     window.__CUTAWAY_ID__ = cutId || null;
-    Object.keys(REG.roofs).forEach((id) => { REG.roofs[id].visible = id !== cutId; });
+    window.__IN_HALL__ = hallNow ? hallNow.id : null;
+    const CEIL = REG.ceilings || {}, FRONT = REG.fronts || {};
+    Object.keys(REG.roofs).forEach((id) => {
+      const hide = id === cutId;
+      REG.roofs[id].visible = !hide;
+      if (CEIL[id]) CEIL[id].visible = !hide;
+      if (FRONT[id]) FRONT[id].visible = !hide;
+    });
 
     // 附近殿宇变化时才发事件，避免每帧噪声
     const state = avatarState();
@@ -554,12 +659,18 @@
         case 'setMode': {
           mode = p.mode === 'orbit' ? 'orbit' : 'thirdPerson';
           controls.enabled = mode === 'orbit';
+          useOrbitLimits(mode === 'orbit');
           if (mode === 'thirdPerson') {
             controls.autoRotate = false;
             lastFrame = 0;
           } else {
             avatar.visible = true;
-            Object.keys(REG.roofs).forEach((id) => { REG.roofs[id].visible = true; });
+            const CEIL0 = REG.ceilings || {}, FRONT0 = REG.fronts || {};
+            Object.keys(REG.roofs).forEach((id) => {
+              REG.roofs[id].visible = true;
+              if (CEIL0[id]) CEIL0[id].visible = true;
+              if (FRONT0[id]) FRONT0[id].visible = true;
+            });
             goView('axis');
           }
           send({ evt: 'modeChanged', mode });
@@ -584,6 +695,18 @@
         case 'teleport':
           teleport(p.hallId);
           break;
+        case 'snapCam':
+          snapFrames = 4;   // 连续 4 帧直贴目标，避开首帧判定抖动
+          break;
+        case 'placeAt':
+          // 验收 / 导览用：直接把人放到世界坐标（殿内取景、锚点核对）
+          A.x = Number(p.x) || 0;
+          A.z = Number(p.z) || 0;
+          A.y = groundY(A.x, A.z);
+          if (typeof p.yaw === 'number') A.yaw = p.yaw;
+          lastFrame = 0;
+          send({ evt: 'avatar', ...avatarState() });
+          break;
         case 'interact':
           interact(p.hallId);
           break;
@@ -598,6 +721,7 @@
           mode = 'orbit';
           controls.enabled = false;
           controls.autoRotate = false;
+          useOrbitLimits(true);
           kneelStart = 0;
           body.position.set(0, 0, 0);
           body.rotation.set(0, 0, 0);
@@ -617,6 +741,7 @@
           if (views[p.view]) {
             mode = 'orbit';
             controls.enabled = true;
+            useOrbitLimits(true);
             goView(p.view);
             send({ evt: 'viewChanged', view: p.view });
             send({ evt: 'modeChanged', mode });
@@ -667,6 +792,7 @@
   });
 
   if (mode === 'thirdPerson') controls.enabled = false;
+  useOrbitLimits(mode === 'orbit');
   window.__TEMPLE_BRIDGE_READY__ = true;
   send({ evt: 'avatar', ...avatarState() });
   setTimeout(() => {
