@@ -6,8 +6,9 @@
   "description": "径山万寿禅寺 · 第三人称漫游与跪拜交互（Vue 3 + TypeScript + Three.js）",
   "scripts": {
     "sync:temple": "node scripts/sync-temple.mjs",
-    "dev": "npm run sync:temple && vite",
-    "build": "npm run sync:temple && vue-tsc --noEmit && vite build",
+    "build:temple": "node scripts/build-three.mjs && python ../jingshan-temple/build.py",
+    "dev": "npm run build:temple && npm run sync:temple && vite",
+    "build": "npm run build:temple && npm run sync:temple && vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
@@ -17,10 +18,12 @@
   },
   "dependencies": {
     "pinia": "^2.3.0",
+    "three": "0.160.0",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "esbuild": "0.21.5",
     "@eslint/js": "^9.17.0",
     "@types/node": "^22.10.2",
     "@vitejs/plugin-vue": "^5.2.1",

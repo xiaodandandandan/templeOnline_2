@@ -132,15 +132,7 @@ Object.keys(SIDE_FURNISH).forEach((k) => { SIDE_PANTHEON[k] = []; });
 /* 前院（五凤山门 ↔ 释迦宝殿）抄手廊：外移配殿 + 廊庑一并加大中庭。
  * 全部廊段都在 |x| ≥ 14.6，中央御道（|x| < 4.1）是唯一通往殿门的直路；
  * 廊两端与山门后墙、释迦月台踏道均留空隙，不接门。 */
-const FRONT_COURT = {
-  crossX: 19.6,   // 前院转角廊中心 |x|：随一进配殿外移 +1.5，内端 16.2
-  laneX: 20.1,    // 抄手廊纵廊中心 |x|：外缘 21.5，恰在配殿出檐 22.3 之内
-  laneW: 2.8,     // 廊宽
-  z0: -10.7,      // 纵廊前端：接前院转角廊后缘，距山门后墙 3.5
-  z1: -33.0,      // 纵廊后端：殿距由 28 拉到 44，随释迦前移 16，仍不接殿门
-  turn: 2.6,      // 后端向内折的横廊长度，内端止于 |x| = 14.6
-  linkZ: -41.1    // 第一进外移与第二进的错台处，加一段横向连廊接回
-};
+// 抄手廊布局由 Corridors.js 定义。
 
 /* ---------- A3. 两侧两层楼阁：沿用天王殿配色（深栗木 / 米白墙 / 青灰瓦） ---
  * 依实景照片“龙王殿”重做立面，不再用丹粉朱饰：
@@ -1660,18 +1652,7 @@ axisRoad(6, window.__LAYOUT__.pondFront);   // 御道止于锦鲤池前岸（池
 })();
 
 // H1b. 前院丹墀：殿距拉到 44 后中庭同步加长，四边压条石收边
-(function frontCourtPaving() {
-  const cz = -21.5, len = 31.2;
-  const tex = paveCourt.clone(); tex.repeat.set(10, 8); tex.needsUpdate = true;
-  const p = makeMesh(new T.PlaneGeometry(42.4, len),
-    new T.MeshStandardMaterial({ map: tex, color: 0xffffff, roughness: 1 }),
-    0, 0.010, cz, false);
-  p.rotation.x = -Math.PI / 2; p.receiveShadow = true; ground.add(p);
-  [-21.2, 21.2].forEach(x =>
-    ground.add(box(0.30, 0.09, len + 0.4, M.stoneWhite, x, 0.045, cz, false)));
-  [-5.9, -37.1].forEach(z =>
-    ground.add(box(42.4, 0.09, 0.30, M.stoneWhite, 0, 0.045, z, false)));
-})();
+buildFrontCourtPaving();
 
 /* ---------- H1c. Building：每座建筑封装为可独立扩展的对象 ----------
  * 目的：把“一栋殿宇”变成一等公民对象，后期功能扩展（新交互、动画、

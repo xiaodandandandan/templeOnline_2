@@ -91,7 +91,7 @@ onBeforeUnmount(() => {
   <div class="hud">
     <div class="top-left">
       <span class="eyebrow">THIRD PERSON</span>
-      <div class="who"><i class="figure" />方块人物 · 第三人称</div>
+      <div class="who"><i class="figure" />漫游人物 · 第三人称</div>
       <div class="pos">
         <span>{{ store.position }}</span>
         <span v-if="store.avatar.onTerrace" class="tag rise">高台</span>

@@ -3,6 +3,7 @@ node_modules/
 
 # 构建产物（可由 python build.py + npm run build 重建）
 jingshan-temple/index.html
+jingshan-temple/vendor/three-runtime.js
 jingshan-worship/dist/
 jingshan-worship/public/temple/
 coverage/
@@ -27,6 +28,10 @@ jingshan-worship-source.zip
 
 # 大型二进制模型：用 node _tools/render.mjs 从场景重新导出
 *.glb
+!jingshan-worship/assets/avatar.glb
+!jingshan-worship/assets/avatar-rigged.glb
+*.blend
+*.blend1
 
 # 工作区本地数据（聊天记忆 / 缓存），不入库
 .workbuddy/
