@@ -50,7 +50,7 @@ const spots = await page.evaluate(() => {
   R.boxes.forEach((b) => {
     const cx = (b.inner.x0 + b.inner.x1) / 2;
     const d = b.inner.z1 - b.inner.z0;
-    // 朝向由「主尊锚点 − 室内中心」反推：配殿整体旋转 90°，不能用固定 yaw=0
+    // 朝向由“主尊锚点 − 室内中心”反推：配殿整体旋转 90°，不能用固定 yaw=0
     const sa = R.anchors.find((a) => a.hallId === b.id && a.kind === 'statue');
     const czc = (b.inner.z0 + b.inner.z1) / 2;
     out[b.id] = {

@@ -1,6 +1,6 @@
-# 徑山萬壽禪寺 · 線上漫游
+# 径山万寿禅寺 · 线上漫游
 
-第三人稱漫游 + 跪拜交互的線上寺院。宿主是 Vue 3 + TypeScript，3D 场景是单文件 three.js，
+第三人称漫游 + 跪拜交互的线上寺院。宿主是 Vue 3 + TypeScript，3D 场景是单文件 three.js，
 通过 `iframe` + `postMessage` 与宿主隔离——Vue 只管业务状态与 UI，three.js 只管渲染、人物与碰撞。
 
 ## 目录
@@ -32,6 +32,18 @@ cd jingshan-worship
 npm install
 npm run dev            # 自动 sync:temple 后启动 Vite
 ```
+
+手机同 WiFi 访问：把 `npm run dev` 换成 `npm run dev -- --host 0.0.0.0`，
+手机浏览器打开 `http://<电脑局域网IP>:5173`。
+
+### 移动端适配
+
+- **手势**：场景区单指转向、双指捏合缩放（等同滚轮）；HUD 覆盖层上的双指手势也会转发给 3D 运行时。
+- **性能**：移动端把渲染像素比上限降到 1.5（桌面仍为 2），避免高分屏 GPU 填充率过载掉帧。
+- **上下文丢失**：手机切后台 / 内存回收导致 WebGL 上下文丢失时，自动切到静态俯瞰兜底图；
+  恢复后自动回到 3D。兜底图 `jingshan-temple/preview_top.png` 必须入库，`sync:temple`
+  会把它复制为 `public/temple/fallback.png`。
+- **视口**：`index.html` 设 `user-scalable=no` + `viewport-fit=cover`，防止误缩放并适配刘海屏。
 
 生产构建：
 
@@ -75,6 +87,12 @@ cd ../jingshan-worship && npm run sync:temple && npm run build
 - `jingshan-temple/vendor/`：第三方库原样存放，不修改。放在 `vendor/` 下可被 Git 语言统计自动忽略。
 - `jingshan-temple/build.py`：对模板与场景做精确替换（标题、匾额、雾、阴影、机位、说明面板），
   注入 `extension.js`，再把 vendor 与源码内联合成单文件产物。
+- **Building 建筑对象**（`extension.js` 的 `H1c` 段）：每座殿宇封装为 `Building` 实例，集中注册到
+  `window.__BUILDINGS__`（`Map<id, Building>`，`window.__BUILDING__('shijia')` 便捷读取）。实例携带
+  `group` / `spec` / `bounds` / `anchors` / `parts`（屋顶·天花·前墙剖视组）等属性，并提供
+  `addFeature(key, factory)` / `getFeature(key)` 扩展插槽——后期新增交互、动画、佛像/陈设建模
+  直接挂到对应建筑实例即可，无需全局遍历。室内尺寸的放大改各殿 `spec`（`AXIS.halls` / `LINGXIAO` /
+  山门殿 `W,H`）与 `hall.ts` 的 `box` 两处，保持视觉几何与碰撞盒单一真源一致。
 - `jingshan-worship/scripts/bridge-runtime.js`：iframe 内的运行时——方块人物、第三人称相机、
   移动/拖拽/滚轮、踏地与碰撞、入殿剖视、蒲团吸附跪拜、导览点投影。
 

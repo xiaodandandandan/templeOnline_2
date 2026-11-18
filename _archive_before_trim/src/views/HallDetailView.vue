@@ -29,42 +29,42 @@ function focusInScene(): void {
         <h1 class="serif">{{ hall.name }}</h1>
         <p>{{ hall.deity }}</p>
       </div>
-      <RouterLink class="btn" to="/">← 返回導覽</RouterLink>
+      <RouterLink class="btn" to="/">← 返回导览</RouterLink>
     </header>
 
     <div class="grid">
       <section class="hero panel">
         <div class="hero-img" />
         <div class="hero-cap">
-          <span>程序化三維复原 · 全寺俯瞰</span>
+          <span>程序化三维复原 · 全寺俯瞰</span>
           <span>Z {{ hall.box.z }} / Y {{ hall.box.baseY }}</span>
         </div>
       </section>
 
       <section class="detail panel">
-        <span class="eyebrow">形制與位置</span>
-        <h2 class="serif">殿宇說明</h2>
+        <span class="eyebrow">形制与位置</span>
+        <h2 class="serif">殿宇说明</h2>
         <p>{{ hall.summary }}</p>
         <div class="metrics">
-          <div><span>面闊</span><b>{{ hall.box.width }} u</b></div>
-          <div><span>進深</span><b>{{ hall.box.depth }} u</b></div>
-          <div><span>標高</span><b>+{{ hall.box.baseY }} u</b></div>
-          <div><span>中軸序</span><b>{{ hall.axisOrder === null ? '配殿' : `第 ${hall.axisOrder + 1} 進` }}</b></div>
+          <div><span>面阔</span><b>{{ hall.box.width }} u</b></div>
+          <div><span>进深</span><b>{{ hall.box.depth }} u</b></div>
+          <div><span>标高</span><b>+{{ hall.box.baseY }} u</b></div>
+          <div><span>中轴序</span><b>{{ hall.axisOrder === null ? '配殿' : `第 ${hall.axisOrder + 1} 进` }}</b></div>
         </div>
         <hr class="divider" />
-        <span class="eyebrow">禮儀要點</span>
+        <span class="eyebrow">礼仪要点</span>
         <ul>
           <li v-for="(t, i) in hall.etiquette" :key="i">{{ t }}</li>
         </ul>
         <div class="actions">
-          <button class="btn btn-primary" @click="focusInScene">在三維場景中定位</button>
-          <RouterLink class="btn" :to="`/worship/${hall.id}`">入殿禮佛</RouterLink>
+          <button class="btn btn-primary" @click="focusInScene">在三维场景中定位</button>
+          <RouterLink class="btn" :to="`/worship/${hall.id}`">入殿礼佛</RouterLink>
         </div>
       </section>
     </div>
 
     <section class="neighbours">
-      <span class="eyebrow">沿中軸相鄰</span>
+      <span class="eyebrow">沿中轴相邻</span>
       <div class="row">
         <RouterLink v-for="n in neighbours" :key="n.id" class="ncard panel" :to="`/hall/${n.id}`">
           <strong class="serif">{{ n.name }}</strong>

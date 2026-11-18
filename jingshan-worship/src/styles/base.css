@@ -7,7 +7,16 @@
 html,
 body,
 #app {
+  height: 100%;
   min-height: 100%;
+}
+
+/* 全站是单视图全屏 3D：一旦出现滚动条，它的出现/消失会让视口宽高反复抖 15px，
+ * iframe 内的 WebGL 就会跟着反复重建缓冲（表现为频闪）。所以显式禁滚。 */
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 body {

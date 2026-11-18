@@ -11,7 +11,7 @@ const category = computed(
 const date = computed(() => props.wish.createdAt.slice(0, 10))
 const hallName = computed(() => getHall(props.wish.hallId).name)
 const statusText = computed(() =>
-  props.wish.status === 'pending' ? '待審核' : props.wish.status === 'hidden' ? '已隱藏' : '',
+  props.wish.status === 'pending' ? '待审核' : props.wish.status === 'hidden' ? '已隐藏' : '',
 )
 </script>
 
@@ -22,7 +22,7 @@ const statusText = computed(() =>
       <span class="hall">{{ hallName }}</span>
       <span v-if="statusText" class="state">{{ statusText }}</span>
     </div>
-    <p class="serif">「{{ wish.text }}」</p>
+    <p class="serif">“{{ wish.text }}”</p>
     <div class="bottom">
       <span>{{ wish.anonymous ? '匿名' : wish.author || '匿名' }}</span>
       <span>{{ date }}</span>

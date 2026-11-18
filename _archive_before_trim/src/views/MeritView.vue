@@ -15,32 +15,32 @@ const fmt = (iso: string): string => iso.replace('T', ' ').slice(0, 16)
     <header class="head">
       <div>
         <span class="eyebrow">LOCAL RECORDS · NO MERIT SCORING</span>
-        <h1 class="serif">禮佛記錄</h1>
-        <p>僅記錄儀軌完成情況與時間，不作功德量化、不排名、不與任何權益掛鉤。</p>
+        <h1 class="serif">礼佛记录</h1>
+        <p>仅记录仪轨完成情况与时间，不作功德量化、不排名、不与任何权益挂钩。</p>
       </div>
       <div class="stats">
-        <div><b>{{ store.total }}</b><span>次禮成</span></div>
+        <div><b>{{ store.total }}</b><span>次礼成</span></div>
         <div><b>{{ store.hallIds }}</b><span>座殿宇</span></div>
       </div>
     </header>
 
     <section class="panel table">
       <div class="thead">
-        <span>時間</span><span>殿宇</span><span>完成</span><span>略過</span><span>供品</span>
+        <span>时间</span><span>殿宇</span><span>完成</span><span>略过</span><span>供品</span>
       </div>
-      <p v-if="store.loading" class="empty">讀取中…</p>
+      <p v-if="store.loading" class="empty">读取中…</p>
       <p v-else-if="!store.records.length" class="empty">
-        尚無記錄。<RouterLink to="/">前往導覽</RouterLink> 選擇殿宇並完成一次儀軌。
+        尚无记录。<RouterLink to="/">前往导览</RouterLink> 选择殿宇并完成一次仪轨。
       </p>
       <div v-for="r in store.records" :key="r.id" class="tr">
         <span class="muted">{{ fmt(r.finishedAt) }}</span>
         <span class="serif">{{ getHall(r.hallId).name }}</span>
         <span>{{ r.completedSteps.length }} 步</span>
         <span>{{ r.skippedSteps.length }} 步</span>
-        <span>{{ r.offerings.length }} 項</span>
+        <span>{{ r.offerings.length }} 项</span>
       </div>
       <div v-if="store.records.length" class="foot">
-        <button class="btn btn-ghost" @click="store.clear()">清空本地記錄</button>
+        <button class="btn btn-ghost" @click="store.clear()">清空本地记录</button>
       </div>
       <p v-if="store.error" class="error">{{ store.error }}</p>
     </section>

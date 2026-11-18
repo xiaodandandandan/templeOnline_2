@@ -1,26 +1,26 @@
 /* =========================================================================
- * 10.6 依《徑山寺遊覽全攻略》航拍标注图重新布局 + 殿宇内部空间
- *   中軸（由南向北）：請香處 → 進口 → 五鳳山門(1) → 釋迦寶殿(2) → 潮音堂(3)
- *                    → 觀音堂(5) → 錦鯉池 → 十二級踏道 → 凌霄閣(6，抬高 +6)
- *   左側：祖堂（抄經）→ 五觀堂（素麵）→ 藥師殿(4，健康延壽) → 西院 → 出口
- *   右側：東廡 → 客堂 → 龍王殿·財神殿(7，順風順水順財神) → 東院
- *   最前方山門題「五鳳山門」，內供彌勒、韋陀，兼天王殿之制；不再另設天王殿。
- *   每进院落由前后殿 + 左右配殿 + 四角转角廊向内围合成四合院，觀音堂前設紅牆院門。
- *   本次：中軸五殿改為「等距 44」—— 0 / -44 / -88 / -132 / -176，相鄰殿距全部拉齊；
- *   池、台地、凌霄閣整段後移 47，四進配殿同步拉長，沿縱深首尾相接、只留屋檐縫，
- *   兩側不留空地；御道 / 鋪地 / 抄手廊 / 導覽立牌 / 松柏 / 朱牆院門一併跟隨。
- *   前院（五鳳山門 ↔ 釋迦寶殿）：第一進左右配殿外移拓寬中庭，兩側各增一條
- *   「抄手廊」，廊兩端折入院內即止，內端止於 |x|≈14.6，绝不沿廊直抵殿門。
- *   兩側配殿依「龍王殿」照片重做兩層樓閣，配色沿用天王殿：深栗木構、米白牆、青灰瓦；
- *   一層金框墨底匾與黃色楹聯、密直棂格門、層層出跳鋪作，腰檐帶一排圓瓦當；
- *   二層整面密直棂格窗 + 方格橫披、窗下直接坐瓦檐，不設紅色平坐欄杆，上檐懸墨底金字匾。
- *   天王殿兩側連廊（抄手廊 / 轉角廊 / 錯台連廊）同步加高，柱頂 8.40、闌額、
- *   普拍方、鋪作與一層腰檐檐口 9.50 全部取同一標高 SONG，與配殿一層嚴格對齊。
- *   中軸主殿形制沿用山門殿：曲面瓦顶 / 举折反宇 / 飞檐翘角 / 白墙栗色木构 / 斗拱。
+ * 10.6 依《径山寺游览全攻略》航拍标注图重新布局 + 殿宇内部空间
+ *   中轴（由南向北）：请香处 → 进口 → 五凤山门(1) → 释迦宝殿(2) → 潮音堂(3)
+ *                    → 观音堂(5) → 锦鲤池 → 十二级踏道 → 凌霄阁(6，抬高 +6)
+ *   左侧：祖堂（抄经）→ 五观堂（素面）→ 药师殿(4，健康延寿) → 西院 → 出口
+ *   右侧：东庑 → 客堂 → 龙王殿·财神殿(7，顺风顺水顺财神) → 东院
+ *   最前方山门题“五凤山门”，内供弥勒、韦陀，兼天王殿之制；不再另设天王殿。
+ *   每进院落由前后殿 + 左右配殿 + 四角转角廊向内围合成四合院，观音堂前设红墙院门。
+ *   本次：中轴五殿改为“等距 44”—— 0 / -44 / -88 / -132 / -176，相邻殿距全部拉齐；
+ *   池、台地、凌霄阁整段后移 47，四进配殿同步拉长，沿纵深首尾相接、只留屋檐缝，
+ *   两侧不留空地；御道 / 铺地 / 抄手廊 / 导览立牌 / 松柏 / 朱墙院门一并跟随。
+ *   前院（五凤山门 ↔ 释迦宝殿）：第一进左右配殿外移拓宽中庭，两侧各增一条
+ *   “抄手廊”，廊两端折入院内即止，内端止于 |x|≈14.6，绝不沿廊直抵殿门。
+ *   两侧配殿依“龙王殿”照片重做两层楼阁，配色沿用天王殿：深栗木构、米白墙、青灰瓦；
+ *   一层金框墨底匾与黄色楹联、密直棂格门、层层出跳铺作，腰檐带一排圆瓦当；
+ *   二层整面密直棂格窗 + 方格横披、窗下直接坐瓦檐，不设红色平坐栏杆，上檐悬墨底金字匾。
+ *   天王殿两侧连廊（抄手廊 / 转角廊 / 错台连廊）同步加高，柱顶 8.40、阑额、
+ *   普拍方、铺作与一层腰檐檐口 9.50 全部取同一标高 SONG，与配殿一层严格对齐。
+ *   中轴主殿形制沿用山门殿：曲面瓦顶 / 举折反宇 / 飞檐翘角 / 白墙栗色木构 / 斗拱。
  *
  *   室内（参考韩国线上山寺 SANSA 木造法堂）：木地板 + 中央拜道 + 贴边柱网 + 藻井 +
  *   壁画背屏 + 金色主尊 + 供桌香炉莲花灯 + 木鱼念珠 + 成排灰色蒲团，行列按面积自适应。
- *   屋顶 / 天花 / 前墙归入「剖视组」，人物入殿时自动隐藏；锚点、碰撞盒、踏地高度
+ *   屋顶 / 天花 / 前墙归入“剖视组”，人物入殿时自动隐藏；锚点、碰撞盒、踏地高度
  *   均由几何产出并注册到 window.__INTERIOR__。
  *   window.__SITE_PLAN__ 为图上全部标注点（编号 / 名称 / 红字说明 / 世界坐标），
  *   运行时据此投影俯瞰导览标注，3D 侧据此生成红底金字导览立牌。
@@ -28,29 +28,37 @@
 
 /* ---------- A. 布局表（只改这里即可调整轴线与院落） ---------- */
 const AXIS = {
-  // 中軸五殿等距：五鳳山門(0) → 釋迦(-44) → 潮音(-88) → 觀音(-132) → 凌霄(-176)，
-  // 相鄰殿距一律 44（原有 28/40/17/44 全部拉齊、整體進深由 129 擴到 176）。
-  // 後段（池 / 台地 / 凌霄）保持原相對關係整體後移 47：池 = 觀音 -16、凌霄 = 池 -28、
-  // 台地中心 = 凌霄 + 2，池後緣與台地前沿仍留 1.5 過渡。
+  // 中轴五殿等距：五凤山门(0) → 释迦(-44) → 潮音(-88) → 观音(-132) → 凌霄(-176)，
+  // 相邻殿距一律 44（原有 28/40/17/44 全部拉齐、整体进深由 129 扩到 176）。
+  // 后段（池 / 台地 / 凌霄）保持原相对关系整体后移 47：池 = 观音 -16、凌霄 = 池 -28、
+  // 台地中心 = 凌霄 + 2，池后缘与台地前沿仍留 1.5 过渡。
   step: 44,
+  // 尺寸整体放大（宽×1.15/深×1.25/高×1.12）：外框与室内陈设同源放大，殿距 44 不变。
+  // 释迦 D 15.8 < 44，潮音/观音更小，相邻殿之间仍留充足院落，不与配殿(x=±20.5)相撞。
+  // 室内净高 = H - 0.375，取 H=12.4 → 净高 12.0（人物 2.72 的 4.4 倍，留余量）。
+  // D 增大约 3：中轴殿距 44、相邻殿前后仍余 25+，室内纵深明显放大而不互撞。
   halls: [
-    { id: 'shijia',  name: '釋迦寶殿', z: -44,  W: 25.0, D: 12.6, H: 10.4, two: true,  rise: 3.20, pw: 4.8 },
-    { id: 'chaoyin', name: '潮音堂',   z: -88,  W: 18.0, D: 9.8,  H: 8.8, two: false, rise: 1.95, pw: 3.4 },
-    { id: 'guanyin', name: '觀音堂',   z: -132, W: 20.0, D: 10.8, H: 9.2, two: false, rise: 2.25, pw: 3.7 }
+    { id: 'shijia',  name: '釋迦寶殿', z: -44,  W: 29.6, D: 18.0, H: 12.4, two: true,  rise: 3.40, pw: 4.8 },
+    { id: 'chaoyin', name: '潮音堂',   z: -88,  W: 22.0, D: 15.0, H: 12.4, two: false, rise: 2.30, pw: 3.4 },
+    { id: 'guanyin', name: '觀音堂',   z: -132, W: 24.0, D: 16.0, H: 12.4, two: false, rise: 2.60, pw: 3.7 }
   ],
-  pondZ: -148,     // 觀音 -16；池後緣 -154.5 與台地前沿 -156 留 1.5
+  pondZ: -148,     // 观音 -16；池后缘 -154.5 与台地前沿 -156 留 1.5
   terraceZ: -174,  // 凌霄 -176 + 2
   terraceY: 6,
   lingxiaoZ: -176,
-  sideX: 20.5,
-  // 四進配殿隨殿距拉長：每進 32.8、段距 33.4，相鄰僅 0.6 屋檐縫，
-  // 從山門後 -8 一直綿延到池前緣 -141.5，兩側不留空地。
+  // 配殿随中轴殿同步外扩：中轴殿放大到半宽 14.8、下檐 16.5 后，
+  // 配殿中心须 ≥ 25.5（腰檐内边 25.5-7.3=18.2 > 16.5），否则屋檐穿插 2.4。
+  // 四进一律外移到 26.0，中庭净宽由 ±20.3 再扩到 ±26，殿廊之间留出采光缝。
+  sideX: 26.0,
+  // 四进配殿随殿距拉长：每进 32.8、段距 33.4，相邻仅 0.6 屋檐缝，
+  // 从山门后 -8 一直绵延到池前缘 -141.5，两侧不留空地。
   courts: [
-    // 前院一進整体外移：中庭净宽由 ±15.3 扩到 ±20.3；其余三进保持 20.5
-    { mid: -24.4,  len: 32.8, x: 25.5, left: '祖堂',   right: '東廡' },
-    { mid: -57.8,  len: 32.8, left: '五觀堂', right: '客堂' },
-    { mid: -91.2,  len: 32.8, left: '藥師殿', right: '龍王殿·財神殿' },
-    { mid: -124.6, len: 32.8, left: '西院',   right: '東院' }
+    // 四进配殿外缘一律 33.8：与天王殿两侧钟鼓楼下檐外沿、前院廊庑外沿成一条直线，
+    // 不再随纵深内收（俯视图里两侧建筑带的外轮廓是笔直的）。
+    { mid: -24.4,  len: 32.8, x: 27.2, left: '祖堂',   right: '东庑' },
+    { mid: -57.8,  len: 32.8, x: 27.2, left: '五观堂', right: '客堂' },
+    { mid: -91.2,  len: 32.8, x: 27.2, left: '药师殿', right: '龙王殿·财神殿' },
+    { mid: -124.6, len: 32.8, x: 27.2, left: '西院',   right: '东院' }
   ]
 };
 
@@ -101,32 +109,32 @@ const PANTHEON = {
 };
 /* 配殿按匾名配置：佛殿有像，功能房（祖堂 / 五观堂 / 客堂 / 院落）暂不设佛像 */
 const SIDE_PANTHEON = {
-  '藥師殿':       [{ kind: 'medicine', h: 3.00, x: 0, main: true },
+  '药师殿':       [{ kind: 'medicine', h: 3.00, x: 0, main: true },
                    { kind: 'attendant', h: 2.05, x: -1.95, dz: -0.85 },
                    { kind: 'attendant', h: 2.05, x: 1.95, dz: -0.85 }],
   // 两尊并坐：间距收到 ±2.0，原先 ±2.6 时侧后方机位会把其中一尊顶到画框外
-  '龍王殿·財神殿': [{ kind: 'dragonKing', h: 2.90, x: -2.0, main: true },
+  '龙王殿·财神殿': [{ kind: 'dragonKing', h: 2.90, x: -2.0, main: true },
                    { kind: 'wealth', h: 2.90, x: 2.0, main: true }],
   '西配院':       [{ kind: 'bodhisattva', h: 2.85, x: 0, main: true }],
-  '東配院':       [{ kind: 'bodhisattva', h: 2.85, x: 0, main: true }],
+  '东配院':       [{ kind: 'bodhisattva', h: 2.85, x: 0, main: true }],
 };
 /* 功能房：不供像，改陈设（祖堂抄经、五观堂斋堂、客堂接待、廊庑经柜、院落储物） */
 const SIDE_FURNISH = {
   '祖堂': 'scriptorium',
-  '五觀堂': 'dining',
+  '五观堂': 'dining',
   '客堂': 'lounge',
-  '東廡': 'cabinet',
+  '东庑': 'cabinet',
   '西院': 'store',
-  '東院': 'store',
+  '东院': 'store',
 };
 Object.keys(SIDE_FURNISH).forEach((k) => { SIDE_PANTHEON[k] = []; });
 
-/* 前院（五鳳山門 ↔ 釋迦寶殿）抄手廊：外移配殿 + 廊廡一并加大中庭。
+/* 前院（五凤山门 ↔ 释迦宝殿）抄手廊：外移配殿 + 廊庑一并加大中庭。
  * 全部廊段都在 |x| ≥ 14.6，中央御道（|x| < 4.1）是唯一通往殿门的直路；
  * 廊两端与山门后墙、释迦月台踏道均留空隙，不接门。 */
 const FRONT_COURT = {
-  crossX: 18.1,   // 前院转角廊中心 |x|，内端 14.7（原 10.7，不再挤占中庭）
-  laneX: 18.6,    // 抄手廊纵廊中心 |x|：外缘 20.0，恰在配殿出檐 20.3 之内
+  crossX: 19.6,   // 前院转角廊中心 |x|：随一进配殿外移 +1.5，内端 16.2
+  laneX: 20.1,    // 抄手廊纵廊中心 |x|：外缘 21.5，恰在配殿出檐 22.3 之内
   laneW: 2.8,     // 廊宽
   z0: -10.7,      // 纵廊前端：接前院转角廊后缘，距山门后墙 3.5
   z1: -33.0,      // 纵廊后端：殿距由 28 拉到 44，随释迦前移 16，仍不接殿门
@@ -135,7 +143,7 @@ const FRONT_COURT = {
 };
 
 /* ---------- A3. 两侧两层楼阁：沿用天王殿配色（深栗木 / 米白墙 / 青灰瓦） ---
- * 依实景照片「龍王殿」重做立面，不再用丹粉朱饰：
+ * 依实景照片“龙王殿”重做立面，不再用丹粉朱饰：
  *   下层层高加高、上层仅四成且收分；一层密直棂格门、层层出跳的深栗铺作、
  *   金框墨底匾与黄色楹联；腰檐青灰筒瓦带一排圆瓦当；
  *   二层整面密直棂格窗 + 上部方格横披，窗直接坐在腰檐瓦上，不设平坐栏杆；
@@ -193,7 +201,7 @@ const SM_LATTICE = new T.MeshStandardMaterial({
   color: 0xffffff, roughness: 0.90, side: T.DoubleSide,
 });
 
-/** 金框墨底金字横匾：照片中一层「龍王殿」匾，从右往左题字 */
+/** 金框墨底金字横匾：照片中一层“龙王殿”匾，从右往左题字 */
 function goldPlaque(text, opt) {
   const o = Object.assign({ w: 768, h: 240, size: 128 }, opt || {});
   return new T.MeshStandardMaterial({
@@ -300,29 +308,25 @@ function songBracketSet(parent, spots, eaveY, scale) {
 /* 航拍图标注点：no = 红色打卡编号；guide = 由运行时投影到俯瞰导览层；
  * sign = [x, z, baseY, rotY] 红底金字说明立牌的世界位置与朝向。 */
 const SITE_PLAN = [
-  { id: 'qingxiang', name: '請香處', note: '入寺前請香', x: 0, y: 4.6, z: 32, guide: true,
-    sign: [4.8, 32, 0, 0] },
-  { id: 'entrance', name: '進口', note: '由此入寺', x: -9, y: 5.4, z: 24, guide: true },
-  { id: 'exit', name: '出口', note: '禮畢由此出', x: -30, y: 5.4, z: -59, guide: true },
-  { id: 'wufeng', name: '五鳳山門', note: '韋陀 · 出行平安|彌勒 · 平安喜樂',
+  { id: 'wufeng', name: '五凤山门', note: '韦陀 · 出行平安|弥勒 · 平安喜乐',
     no: 1, x: 0, y: 11.0, z: 0, sign: [9.8, 5.6, 0, 0] },
-  { id: 'zutang', name: '祖堂', note: '抄經', x: -25.5, y: 13.0, z: -24.4, guide: true,
+  { id: 'zutang', name: '祖堂', note: '抄经', x: -25.5, y: 13.0, z: -24.4, guide: true,
     sign: [-11.8, -24.4, 0, Math.PI / 2] },
-  { id: 'shijia', name: '釋迦寶殿', note: '釋迦摩尼 · 萬事可求|普賢 · 事業|文殊 · 學業',
+  { id: 'shijia', name: '释迦宝殿', note: '释迦摩尼 · 万事可求|普贤 · 事业|文殊 · 学业',
     no: 2, x: 0, y: 12.4, z: -44, sign: [10.8, -37.2, 0, 0] },
-  { id: 'wuguantang', name: '五觀堂', note: '素麵', x: -20.5, y: 13.0, z: -57.8, guide: true,
+  { id: 'wuguantang', name: '五观堂', note: '素面', x: -20.5, y: 13.0, z: -57.8, guide: true,
     sign: [-14.2, -57.8, 0, Math.PI / 2] },
-  { id: 'chaoyin', name: '潮音堂', note: '文化傳播 · 展覽', no: 3,
+  { id: 'chaoyin', name: '潮音堂', note: '文化传播 · 展览', no: 3,
     x: 0, y: 9.4, z: -88, sign: [9.2, -82.6, 0, 0] },
-  { id: 'yaoshi', name: '藥師殿', note: '健康延壽', no: 4, x: -20.5, y: 13.0, z: -91.2, guide: true,
+  { id: 'yaoshi', name: '药师殿', note: '健康延寿', no: 4, x: -20.5, y: 13.0, z: -91.2, guide: true,
     sign: [-14.2, -91.2, 0, Math.PI / 2] },
-  { id: 'longwang', name: '龍王殿·財神殿', note: '順風順水順財神', no: 7,
+  { id: 'longwang', name: '龙王殿·财神殿', note: '顺风顺水顺财神', no: 7,
     x: 20.5, y: 13.0, z: -91.2, guide: true, sign: [14.2, -91.2, 0, -Math.PI / 2] },
-  { id: 'guanyin', name: '觀音堂', note: '姻緣求子', no: 5,
+  { id: 'guanyin', name: '观音堂', note: '姻缘求子', no: 5,
     x: 0, y: 9.8, z: -132, sign: [9.6, -126.4, 0, 0] },
-  { id: 'koi', name: '錦鯉池', note: '觀音堂與凌霄閣之間',
+  { id: 'koi', name: '锦鲤池', note: '观音堂与凌霄阁之间',
     x: 0, y: 1.6, z: -148, guide: true },
-  { id: 'lingxiao', name: '凌霄閣', note: '諸事順遂', no: 6,
+  { id: 'lingxiao', name: '凌霄阁', note: '诸事顺遂', no: 6,
     x: 0, y: 20.0, z: -176, sign: [10.8, -169.4, 6, 0] },
 ];
 window.__SITE_PLAN__ = SITE_PLAN;
@@ -389,51 +393,6 @@ function makeGuideSign(item) {
   return g;
 }
 
-/** 木石牌坊：进口 / 出口；匾额沿用传统右读排版 */
-function makePailou(name, x, z, rotY) {
-  const g = new T.Group();
-  g.position.set(x, 0, z); g.rotation.y = rotY || 0;
-  const W = 6.2;
-  [-W / 2, W / 2].forEach(px => {
-    g.add(box(0.92, 0.50, 0.92, M.stoneDark, px, 0.25, 0));
-    g.add(box(0.44, 4.9, 0.44, M.woodMid, px, 2.95, 0));
-    g.add(cyl(0.30, 0.30, 0.12, M.stoneWhite, 10, px, 0.56, 0));
-  });
-  g.add(box(W + 1.2, 0.42, 0.62, M.woodDark, 0, 4.62, 0));
-  g.add(box(W + 0.8, 0.24, 0.50, M.woodMid, 0, 5.08, 0));
-  g.add(box(3.35, 1.08, 0.12, M.woodDark, 0, 4.62, 0.30));
-  g.add(panel(3.15, 0.92, plaqueMaterial(name, { size: 84 }), 0, 4.62, 0.38));
-  g.add(makeRoof(W + 2.1, 2.7, 5.42, 0.95,
-    { corner: 0.34, ridgeHalf: 1.55, curve: 1.20, seg: 14, beasts: false, finial: false }));
-  return g;
-}
-
-/** 请香处：四柱小亭 + 三足香炉 + 竖匾，置于山门之前 */
-function makeIncensePavilion(x, z) {
-  const g = new T.Group();
-  g.position.set(x, 0, z);
-  g.add(box(5.4, 0.42, 5.4, M.stoneDark, 0, 0.21, 0));
-  g.add(box(5.5, 0.10, 5.5, M.stoneWhite, 0, 0.47, 0));
-  [[-1.9, -1.9], [1.9, -1.9], [-1.9, 1.9], [1.9, 1.9]].forEach(p => {
-    g.add(cyl(0.19, 0.22, 3.5, M.wood, 10, p[0], 2.22, p[1]));
-    g.add(cyl(0.28, 0.28, 0.12, M.stoneDark, 10, p[0], 0.58, p[1]));
-  });
-  g.add(box(4.6, 0.26, 4.6, M.woodDark, 0, 3.90, 0));
-  g.add(makeRoof(6.2, 6.2, 4.04, 1.45,
-    { corner: 0.55, ridgeHalf: 1.10, curve: 1.35, seg: 18, beasts: false, finial: true }));
-  // 三足香炉
-  g.add(cyl(0.72, 0.62, 0.78, M2.bronze, 16, 0, 1.00, 0));
-  g.add(cyl(0.86, 0.72, 0.14, M2.bronze, 16, 0, 1.44, 0));
-  [-1, 0, 1].forEach(i => g.add(cyl(0.075, 0.075, 0.52, M.woodDark, 6,
-    Math.cos(i * 2.094) * 0.52, 0.75, Math.sin(i * 2.094) * 0.52)));
-  // 香枝三缕
-  [-0.22, 0, 0.22].forEach(dx => g.add(cyl(0.018, 0.018, 0.86, M2.incense, 5, dx, 1.92, 0)));
-  // 竖匾朝南，挂在前檐之外，避免俯瞰时被屋面遮住
-  g.add(box(0.86, 2.05, 0.12, M.woodDark, 0, 2.90, 3.30));
-  g.add(panel(0.72, 1.90, plaqueMaterial('請香處', { vertical: true, size: 46 }), 0, 2.90, 3.38));
-  return g;
-}
-
 /** 观音堂前红墙院门：两段朱墙夹出中央通道，不设横屋以免遮挡第三人称相机 */
 function makeRedWallGate(z) {
   const g = new T.Group();
@@ -449,7 +408,7 @@ function makeRedWallGate(z) {
 }
 
 /* ---------- B0. 殿宇内部空间 -------------------------------------------------
- * 本函数也会在「基线山门殿」代码块中被调用（此时本扩展的 const 尚未初始化），
+ * 本函数也会在“基线山门殿”代码块中被调用（此时本扩展的 const 尚未初始化），
  * 因此只依赖基线已定义的 T / box / cyl / makeMesh 与 window 注册表。
  *
  * 产出（window.__INTERIOR__）：
@@ -459,13 +418,16 @@ function makeRedWallGate(z) {
  * ------------------------------------------------------------------------- */
 function buildInterior(group, spec, id, baseY) {
   const REG = window.__INTERIOR__ ||
-    (window.__INTERIOR__ = { boxes: [], roofs: {}, anchors: [] });
+    (window.__INTERIOR__ = { boxes: [], roofs: {}, anchors: [], corridorRoofs: [] });
+  // 连廊屋顶不在任何殿的剖视组内，殿内贴身视角会从室内看到瓦顶穿模。
+  // 统一登记到 corridorRoofs，由运行时在 hallBlend 高时隐藏、院落/俯瞰时显示。
+  if (!REG.corridorRoofs) REG.corridorRoofs = [];
   const IM = window.__INTERIOR_MAT__ || (window.__INTERIOR_MAT__ = (() => {
     const mk = (c, e, r, m) => new T.MeshStandardMaterial({
       color: c, roughness: r === undefined ? 0.92 : r, metalness: m || 0,
       emissive: e || 0x000000, emissiveIntensity: 0.38,
     });
-    // 法堂背屏：枣红底 + 淡金祥云，整幅作「静的背景」——
+    // 法堂背屏：枣红底 + 淡金祥云，整幅作“静的背景”——
     // 反复的同心圆会与佛像背光抢焦点，改为中心一团柔光晕 + 四角云气
     const muralTex = canvasTex(512, 384, (g, w, h) => {
       const bg = g.createLinearGradient(0, 0, 0, h);
@@ -488,7 +450,7 @@ function buildInterior(group, spec, id, baseY) {
         g.stroke();
       }
       g.globalAlpha = 1;
-      // 底缘莲瓣一排，交代背屏的「台」感
+      // 底缘莲瓣一排，交代背屏的“台”感
       for (let i = 0; i < 16; i++) {
         const bx = 18 + i * (w - 36) / 15;
         g.beginPath();
@@ -591,12 +553,15 @@ function buildInterior(group, spec, id, baseY) {
   addBox(Math.min(1.9, innerW * 0.15), 0.016, innerD, IM.aisle, 0, F + 0.014, innerCZ);
 
   // 2) 侧壁内装修：木质格窗，入殿后不再面对空荡白墙
+  // 左侧门洞（spec.sideDoor）：左侧（s=-1）格窗若压在门洞上就跳过，免得薄板挡住通行。
+  const sdHalf = 1.35, sdZ = innerCZ;
   const winN = 2;
   [-1, 1].forEach(s => {
     const wx = s * (innerW / 2 - 0.16);
     for (let i = 0; i < winN; i++) {
       const wz = zB + (i + 0.5) * innerD / winN;
       const ww = Math.min(1.75, innerD / winN * 0.74);
+      if (s < 0 && spec.sideDoor && Math.abs(wz - sdZ) < sdHalf + ww / 2) continue;
       addBox(0.05, 1.85, ww, IM.screen, wx, F + 1.62, wz);
       addBox(0.07, 0.055, ww, IM.trim, wx - s * 0.04, F + 1.62, wz);
     }
@@ -630,7 +595,7 @@ function buildInterior(group, spec, id, baseY) {
   addBox(Math.min(3.6, doorHalf * 2 + 0.6), 0.09, 0.58, IM.base, 0, F + 0.045, frontZ - 0.32);
 
   /* 2c) 墙面装修：基线墙体是素色 shade 墙，殿内近看是一整片灰面。
-   *     贴一层「裙板 + 壁板 + 彩带 + 跨间立柱」，侧墙与后墙两侧都覆盖到。 */
+   *     贴一层“裙板 + 壁板 + 彩带 + 跨间立柱”，侧墙与后墙两侧都覆盖到。 */
   const DR = 0.07;
   const wallTop = (spec.ceilingY !== undefined ? spec.ceilingY : top + H - 0.30) - 0.12;
   const wallH = Math.max(3.0, wallTop - F);
@@ -769,7 +734,7 @@ function buildInterior(group, spec, id, baseY) {
     const bR = Math.min(h * 0.33, 1.02);              // 座盘半径：不得撑出佛坛
     /* ---- 须弥座 + 莲台 ----
      * 三层收分（下枭 / 束腰 / 上枋）外面围一圈仰莲瓣。原先用压扁球当花瓣，
-     * 正面只剩几颗凸点；改成向外倾的锥体，莲瓣才有「开」的意思。 */
+     * 正面只剩几颗凸点；改成向外倾的锥体，莲瓣才有“开”的意思。 */
     addCyl(bR * 0.94, bR, bh0 * 0.34, IM.base, 18, px, by + bh0 * 0.17, pz);
     addCyl(bR * 0.70, bR * 0.90, bh0 * 0.28, IM.altar, 18, px, by + bh0 * 0.46, pz);
     addCyl(bR * 0.99, bR * 0.90, bh0 * 0.26, IM.altarTop, 18, px, by + bh0 * 0.73, pz);
@@ -804,7 +769,7 @@ function buildInterior(group, spec, id, baseY) {
       addBox(HH * 0.34, HH * 0.085, HH * 0.13, P.robe, px, y0 + HH * 0.118, pz + HH * 0.138);
     }
     /* 躯干：LatheGeometry 沿半径剖面旋转。关键是 88% 高度处最宽、再急收为颈根——
-     * 有肩线才像「人」；原先剖面在中段最宽、往上收到很细，读起来是一截花瓶。 */
+     * 有肩线才像“人”；原先剖面在中段最宽、往上收到很细，读起来是一截花瓶。 */
     const torsoH = standing ? HH * 0.455 : HH * 0.49;
     const torsoBot = standing ? y0 + HH * 0.30 : y0 + HH * 0.135;
     const torsoY = torsoBot + torsoH * 0.5;
@@ -920,7 +885,7 @@ function buildInterior(group, spec, id, baseY) {
       const ig = add(new T.SphereGeometry(HH * 0.09, 8, 6), IM.gold, px + HH * 0.26, torsoY - torsoH * 0.46, pz + HH * 0.10);
       ig.scale.set(1.25, 0.62, 0.9);
     }
-    /* 整体朝向：deity 是逐件往 inner 里塞的，用「本次新增子节点」反收进一个组，
+    /* 整体朝向：deity 是逐件往 inner 里塞的，用“本次新增子节点”反收进一个组，
      * 再对组做旋转 —— 这样韦陀这类背向门口的像不必重写坐标。 */
     if (d.ry) {
       const g = new T.Group();
@@ -1079,8 +1044,17 @@ function buildInterior(group, spec, id, baseY) {
     rects.push({ x: -(half + doorHalf) / 2, z: backZ, w: half - doorHalf, d: 0.6 });
     rects.push({ x:  (half + doorHalf) / 2, z: backZ, w: half - doorHalf, d: 0.6 });
   } else rects.push({ x: 0, z: backZ, w: W, d: 0.6 });
-  [-half + 0.25, half - 0.25].forEach(x =>
-    rects.push({ x, z: (frontZ + backZ) / 2, w: 0.6, d: frontZ - backZ }));
+  // 左侧（世界 -x）若开侧门，把整条左墙拆成门洞前后两段，中间留出可通行缺口；
+  // sdZ 用室内中心，门宽 2×sdHalf。右墙整条保留。
+  [-1, 1].forEach(s => {
+    const x = s < 0 ? -half + 0.25 : half - 0.25;
+    if (s < 0 && spec.sideDoor) {
+      rects.push({ x, z: (frontZ + sdZ + sdHalf) / 2, w: 0.6, d: Math.max(0.4, frontZ - (sdZ + sdHalf)) });
+      rects.push({ x, z: (backZ + sdZ - sdHalf) / 2, w: 0.6, d: Math.max(0.4, (sdZ - sdHalf) - backZ) });
+    } else {
+      rects.push({ x, z: (frontZ + backZ) / 2, w: 0.6, d: frontZ - backZ });
+    }
+  });
 
   const body = toAABB(0, (spec.bodyFront + spec.bodyBack) / 2,
     W + 0.6, spec.bodyFront - spec.bodyBack);
@@ -1134,6 +1108,7 @@ function makeHall(s, baseY, id) {
     W, H, top, floorY: F,
     frontWallZ: wallZ, backWallZ: backZ, doorHalf,
     backDoor: true, bodyFront: frontZ + 1.25, bodyBack: backZ - 0.35,
+    sideDoor: true,   // 左侧开可通行侧门：碰撞墙拆段 + 门洞格窗跳过
     pantheon: PANTHEON[id],
   }, id, y0);
 
@@ -1175,7 +1150,17 @@ function makeHall(s, baseY, id) {
   });
 
   // 侧墙 / 后墙（后墙开中央券门，贯通中轴御道）
-  g.add(box(0.5, H, D, M.wallShade, -W / 2 - 0.2, top + H / 2, 0));
+  // 左侧墙开侧门：沿 z 展开的带券洞墙（洞心 z=0.315 与 buildInterior 的 sdZ 对齐），
+  // 让香客可从西侧庭院经侧门进殿；碰撞缺口由 buildInterior sideDoor 同步生成。
+  const sdZ = 0.315, sdW = 2.4, sdH = Math.min(5.4, H * 0.5);
+  const lw = makeDoorWall(D, H, sdW, sdH, top, 0, M.wallShade, 0.5);
+  lw.rotation.y = Math.PI / 2;
+  lw.position.set(-W / 2 - 0.45, top, sdZ);
+  g.add(lw);
+  // 侧门木框：两根门柱 + 门楣（在宫墙内侧略凸出）
+  [-1, 1].forEach(ss => g.add(box(0.30, sdH, 0.26, M.woodDark,
+    -W / 2 - 0.10, top + sdH / 2, sdZ + ss * (sdW / 2 + 0.13))));
+  g.add(box(0.30, 0.24, sdW + 0.50, M.woodDark, -W / 2 - 0.10, top + sdH + 0.10, sdZ));
   g.add(box(0.5, H, D, M.wallShade, W / 2 + 0.2, top + H / 2, 0));
   // 后门压到 4.6 米：原 H*0.72 在殿内看是半片天空，且小门更合寺观后门之制
   g.add(makeDoorWall(W, H, 3.0, Math.min(4.60, H * 0.55), top, backZ, M.wallShade, 0.5));
@@ -1202,8 +1187,9 @@ function makeHall(s, baseY, id) {
   // 下檐 / 腰檐（归入剖视组）
   const rw = W + 3.4, rd = D + 3.6;
   const lowerRise = s.two ? s.rise * 0.55 : s.rise;
-  IT.cut.add(makeRoof(rw, rd, top + H + 0.22, lowerRise,
-    { corner: 0.62, ridgeHalf: (rw - rd) / 2 - 0.30, curve: 1.45, seg: 20, beasts: false }));
+  // 飞檐起翘收敛：corner 0.62→0.36，翘角不再横向冲进两侧配殿；屋面略收，留采光缝
+  IT.cut.add(makeRoof(rw - 0.8, rd, top + H + 0.22, lowerRise,
+    { corner: 0.36, ridgeHalf: (rw - 0.8 - rd) / 2 - 0.30, curve: 1.40, seg: 20, beasts: false }));
 
   // 重檐：上层墙体 + 格窗 + 竖匾 + 上檐
   if (s.two) {
@@ -1222,7 +1208,7 @@ function makeHall(s, baseY, id) {
       g.add(cyl(0.18, 0.20, 2.9, M.wood, 8, x, ub + 1.45, ud / 2 - 0.45));
       pushDougong(x, y0 + ub + 2.95, gz(ud / 2 - 0.45), 0.66);
     });
-    // 「阁」形制：上层外挑平坐 + 一圈木栏杆（凌霄阁专用）
+    // “阁”形制：上层外挑平坐 + 一圈木栏杆（凌霄阁专用）
     if (s.gallery) {
       const gy = ub + 0.16, gw = uw + 1.5, gd = ud + 1.5, cz = -0.5;
       g.add(box(gw, 0.16, gd, M.stoneWhite, 0, gy, cz));
@@ -1242,13 +1228,13 @@ function makeHall(s, baseY, id) {
       }
     }
     const rw2 = W + 2.4, rd2 = D + 2.6;
-    IT.cut.add(makeRoof(rw2, rd2, ub + 3.10, s.rise,
-      { corner: 0.58, ridgeHalf: (rw2 - rd2) / 2 - 0.35, curve: 1.5, seg: 24, beasts: true }));
+    IT.cut.add(makeRoof(rw2 - 0.6, rd2, ub + 3.10, s.rise,
+      { corner: 0.36, ridgeHalf: (rw2 - 0.6 - rd2) / 2 - 0.35, curve: 1.45, seg: 24, beasts: true }));
   }
   return g;
 }
 
-/* ---------- C. 两侧配殿：按龍王殿照片重做的两层楼阁 ---------------------
+/* ---------- C. 两侧配殿：按龙王殿照片重做的两层楼阁 ---------------------
  * 下层层高加高、上层仅四成且收分；深栗木柱与铺作、米白墙、青灰筒瓦。
  * 一层：密直棂格门 / 金框墨底匾 / 黄色楹联 / 柱头 + 补间密铺作；
  * 腰檐：一排圆瓦当；二层窗直接落在瓦檐上，照片里没有平坐栏杆，故不设勾栏；
@@ -1257,9 +1243,9 @@ function makeSideHall(court, side, name, baseY, id, deep) {
   const g = new T.Group();
   g.position.set(side * (court.x || AXIS.sideX), baseY || 0, court.mid);
   g.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
-  const W = court.len, D = deep ? 8.0 : 6.4;
+  const W = court.len, D = deep ? 11.2 : 9.0;   // 配殿进深随中轴再放大（局部 X 方向），中庭仍有余量
   const top = 0.70, F = SONG.podium;
-  const H1 = SONG.colTop - top - 0.10;   // 7.60：下檐柱顶抬到 8.40 標高
+  const H1 = SONG.colTop - top - 0.10;   // 7.60：下檐柱顶抬到 8.40 标高
   const wallZ = D / 2 - 0.30, backZ = -D / 2 + 0.15;
   const doorHalf = 1.05;
 
@@ -1267,7 +1253,8 @@ function makeSideHall(court, side, name, baseY, id, deep) {
     W, H: H1, top, floorY: F,
     frontWallZ: wallZ, backWallZ: backZ, doorHalf,
     backDoor: false, bodyFront: D / 2 + 0.8, bodyBack: -D / 2 - 0.8,
-    ceilingY: SONG.colTop - 0.70,
+    // 室内天花抬到一层腰檐下极限：净高 6.88 → 8.48（腰檐 9.5 不破，二层楼面 10.6 不穿）
+    ceilingY: SONG.eave1 - 0.20,
     pantheon: SIDE_PANTHEON[name],
     furnish: SIDE_FURNISH[name],
     noSeats: !!SIDE_FURNISH[name],
@@ -1315,10 +1302,10 @@ function makeSideHall(court, side, name, baseY, id, deep) {
   g.add(box(W + 0.5, SONG.lintel, 0.30, SM.lintel,
     0, SONG.colTop + SONG.lintel / 2, D / 2));
   g.add(box(W + 1.2, SONG.pupai, 0.46, SM.pupai,
-    0, SONG.colTop + SONG.lintel + SONG.pupai / 2, D / 2));   // 普拍方兩端出頭
+    0, SONG.colTop + SONG.lintel + SONG.pupai / 2, D / 2));   // 普拍方两端出头
   songBracketSet(g, spots, SONG.eave1, SONG.bracketScale);
 
-  // 一层金框墨底匾（照片中「龍王殿」）：挑出到腰檐前沿之下，避免被瓦檐遮住
+  // 一层金框墨底匾（照片中“龙王殿”）：挑出到腰檐前沿之下，避免被瓦檐遮住
   const longName = name.length > 4;
   const pw2 = longName ? 4.6 : 3.2;
   const py = SONG.colTop - 0.85, pz = D / 2 + 0.92;
@@ -1328,19 +1315,23 @@ function makeSideHall(court, side, name, baseY, id, deep) {
     0, py, pz));
   [-1, 1].forEach(s =>   // 匾上两根吊杆，挂在阑额下
     g.add(box(0.06, 0.42, 0.06, SM.lattice, s * pw2 * 0.34, py + 0.76, pz - 0.06)));
-  const couplets = ['佛光普照三千界', '法雨均霑萬億心'];
+  const couplets = ['佛光普照三千界', '法雨均沾万亿心'];
   [-1, 1].forEach((s, k) => {
     const cx = s * 2.06;
     g.add(box(0.54, 4.34, 0.12, SM.columnDim, cx, F + 2.90, D / 2 + 0.14));
     g.add(panel(0.44, 4.20, coupletMat(couplets[k]), cx, F + 2.90, D / 2 + 0.22));
   });
 
-  // 一层腰檐：青灰筒瓦 + 前檐一排圆瓦当；入殿剖视时一并隐藏
-  IT.cut.add(songRoof(W + 2.6, D + 2.8, SONG.eave1, SONG.waistRise,
-    { corner: 0.26, curve: 1.22, seg: 16 }));
-  eaveTileRow(IT.cut, W + 2.5, SONG.eave1 - 0.08, D / 2 + 1.40);
+  // 一层腰檐：加大外挑 + 举高，使俯瞰与近景都能看到一楼有一圈独立屋檐
+  // （原先挑出仅 1.3、举高 1.0，被二层上檐盖住，远看像"一楼没屋檐"）。
+  // 外挑比二层上檐多出约 2.6，形成清晰的一层披檐；四角仅轻翘，不与主体打架。
+  // w 沿中轴方向：收到 W+1.6，避免相邻配殿首尾飞檐重叠（原 W+2.6 首尾搭 2.0）；
+  // d 朝中庭方向：加大到 D+5.2，一楼披檐朝庭院明显外挑，二层上檐也不会盖住它。
+  IT.cut.add(songRoof(W + 1.6, D + 5.2, SONG.eave1, 1.30,
+    { corner: 0.36, curve: 1.26, seg: 18 }));
+  eaveTileRow(IT.cut, W + 1.5, SONG.eave1 - 0.08, D / 2 + 2.60);
 
-  /* 二层：腰檐瓦之上直接起密直棂格窗，不设平坐勾欄（照片中无红色栏杆） */
+  /* 二层：腰檐瓦之上直接起密直棂格窗，不设平坐勾栏（照片中无红色栏杆） */
   const upper = new T.Group();
   IT.cut.add(upper);                       // 剖视时二层一并隐去，避免遮挡室内
   const P = SONG.pingzuo, C2 = SONG.colH2;
@@ -1372,13 +1363,13 @@ function makeSideHall(court, side, name, baseY, id, deep) {
   upper.add(box(W2 + 1.0, 0.12, 0.42, SM.pupai, 0, t2 + 0.36, D2 / 2 - 0.20));
   songBracketSet(upper, spots2, SONG.eave2, 0.55);
   // 上檐下悬墨底金字横匾（照片上层题额）
-  const uw = 3.6;   // 照片里上层另题四字吉语「神應靈澤」，与一层殿名匾区分
+  const uw = 3.6;   // 照片里上层另题四字吉语“神应灵泽”，与一层殿名匾区分
   upper.add(box(uw + 0.18, 0.90, 0.12, SM.columnDim, 0, SONG.eave2 - 0.92, D2 / 2 + 0.30));
   upper.add(panel(uw, 0.78, plaqueMaterial('神應靈澤', { size: 88 }),
     0, SONG.eave2 - 0.92, D2 / 2 + 0.38));
-  IT.cut.add(songRoof(W2 + 2.8, D2 + 3.0, SONG.eave2, SONG.roofRise,
-    { corner: 0.34, curve: 1.28, seg: 18 }));
-  eaveTileRow(IT.cut, W2 + 2.7, SONG.eave2 - 0.08, D2 / 2 + 1.48);
+  IT.cut.add(songRoof(W2 + 2.4, D2 + 2.6, SONG.eave2, SONG.roofRise,
+    { corner: 0.32, curve: 1.28, seg: 18 }));
+  eaveTileRow(IT.cut, W2 + 2.3, SONG.eave2 - 0.08, D2 / 2 + 1.28);
   return g;
 }
 
@@ -1413,8 +1404,10 @@ function makeCrossLink(z, side, baseY, x) {
   }
   [2.90, 5.60].forEach(y => [-1.42, 1.42].forEach(zz =>
     g.add(box(L, 0.10, 0.12, SM.columnDim, 0, y, zz))));
-  g.add(songRoof(L + 1.0, 3.8, SONG.eave1, 0.82,
-    { corner: 0.24, curve: 1.22, seg: 14 }));
+  const roof = songRoof(L + 1.0, 3.8, SONG.eave1, 0.82,
+    { corner: 0.24, curve: 1.22, seg: 14 });
+  g.add(roof);
+  const _REG = window.__INTERIOR__; if (_REG && _REG.corridorRoofs) _REG.corridorRoofs.push(roof);
   return g;
 }
 
@@ -1473,8 +1466,10 @@ function makeCorridorBay(len, width, opt) {
   }
   [2.90, 5.60].forEach(y => [zF, zB].forEach(z =>
     g.add(box(len + 0.2, 0.10, 0.12, SM.columnDim, 0, y, z))));
-  g.add(songRoof(len + 1.0, width + 1.0, SONG.eave1, 0.78,
-    { corner: 0.26, curve: 1.22, seg: 16 }));
+  const roof = songRoof(len + 1.0, width + 1.0, SONG.eave1, 0.78,
+    { corner: 0.26, curve: 1.22, seg: 16 });
+  g.add(roof);
+  const _REG = window.__INTERIOR__; if (_REG && _REG.corridorRoofs) _REG.corridorRoofs.push(roof);
   if (o.lamps) {
     [-len / 3, 0, len / 3].forEach(x => {
       g.add(cyl(0.020, 0.020, 0.30, SM.railDark, 6, x, CT - 0.32, zF - 0.10));
@@ -1487,7 +1482,7 @@ function makeCorridorBay(len, width, opt) {
 
 /** 一侧前院抄手廊（柱顶 / 阑额 / 檐口与配殿一层齐平）：
  *  纵廊 + 后端向内折的横廊，前端由外移后的转角廊充当横臂，
- *  整体呈「ㄈ」字开口朝中庭。两端均不接山门、不接释迦宝殿，内端止于 |x| = 14.6，
+ *  整体呈“ㄈ”字开口朝中庭。两端均不接山门、不接释迦宝殿，内端止于 |x| = 14.6，
  *  中央御道仍是唯一通往殿门的直路 —— 沿廊不能直接到门。 */
 function makeFrontCloister(side) {
   const F = FRONT_COURT;
@@ -1508,7 +1503,8 @@ function makeFrontCloister(side) {
 function makeJunctionLink(side) {
   const len = 7.0;
   const bay = makeCorridorBay(len, 2.4, { seats: true, lamps: false });
-  bay.position.set(side * 23.4, 0, FRONT_COURT.linkZ);
+  // 错台连廊接回外移后的一进 / 二进配殿（中心分别 27.0 / 26.5）
+  bay.position.set(side * 24.8, 0, FRONT_COURT.linkZ);
   return bay;
 }
 
@@ -1677,49 +1673,126 @@ axisRoad(6, window.__LAYOUT__.pondFront);   // 御道止于锦鲤池前岸（池
     ground.add(box(42.4, 0.09, 0.30, M.stoneWhite, 0, 0.045, z, false)));
 })();
 
-// H2. 中轴三殿（最前方「五鳳山門」由基线场景构建）
-AXIS.halls.forEach(s => modelRoot.add(makeHall(s, 0, s.id)));
+/* ---------- H1c. Building：每座建筑封装为可独立扩展的对象 ----------
+ * 目的：把“一栋殿宇”变成一等公民对象，后期功能扩展（新交互、动画、
+ * 佛像/陈设建模、碰撞规则）都挂到实例上，不再靠全局遍历 id 字符串。
+ * 约定：
+ *   - group   该建筑的 THREE.Group（世界变换的载体）
+ *   - parts   语义化子部件 { interior, cut(屋顶), ceiling, front }，来自 buildInterior
+ *   - features 扩展功能注册表（Map<string, any>），addFeature 挂载、getFeature 读取
+ *   - anchors  该殿室内锚点（佛像/蒲团/香炉…），来自 __INTERIOR__
+ *   - bounds   该殿世界包围盒（碰撞/机位）
+ * 所有实例集中到 window.__BUILDINGS__（Map<id, Building>），运行时可按需取用。
+ * --------------------------------------------------------------------------- */
+class Building {
+  constructor({ id, name, kind, group, spec, baseY = 0, parts = null }) {
+    this.id = id;
+    this.name = name;
+    this.kind = kind;               // 'axis' | 'side' | 'tower' 等，便于按类筛选
+    this.group = group;             // THREE.Group
+    this.spec = spec;               // 尺寸/布局参数（引用源对象，改它即可联动生成逻辑）
+    this.baseY = baseY;
+    this.features = new Map();      // 扩展功能插槽
+    // 从几何注册表回查本殿的部件/碰撞盒/锚点（单一真源，不手写第二份）
+    const REG = window.__INTERIOR__ || { boxes: [], anchors: [], roofs: {}, ceilings: {}, fronts: {} };
+    this.bounds = REG.boxes.find(b => b.id === id) || null;
+    this.parts = parts || {
+      cut: REG.roofs[id] || null,
+      ceiling: (REG.ceilings || {})[id] || null,
+      front: (REG.fronts || {})[id] || null,
+    };
+    // 语义化标记：three.js 的 getObjectByName / traverse 可按 id 精确取到
+    this.group.name = 'building:' + id;
+    this.group.userData.buildingId = id;
+    this.group.userData.buildingName = name;
+    this.group.userData.kind = kind;
+  }
+  /** 挂载扩展功能；factory 可为值或 (building)=>value，返回所挂实例 */
+  addFeature(key, factory) {
+    if (this.features.has(key)) console.warn('[Building] 覆盖功能:', this.id, key);
+    const inst = typeof factory === 'function' ? factory(this) : factory;
+    this.features.set(key, inst);
+    return inst;
+  }
+  getFeature(key) { return this.features.get(key); }
+  /** 该殿室内锚点（佛像位 / 蒲团位 / 香炉位…），供后期佛像建模消费 */
+  get anchors() {
+    const REG = window.__INTERIOR__ || { anchors: [] };
+    return REG.anchors.filter(a => a.hallId === this.id);
+  }
+  setVisible(v) { this.group.visible = !!v; return this; }
+  get position() { return this.group.position; }
+  get interior() { return this.bounds ? this.bounds.inner : null; }
+}
+
+const BUILDINGS = new Map();
+window.__BUILDINGS__ = BUILDINGS;
+function registerBuilding(opt) {
+  const b = new Building(opt);
+  BUILDINGS.set(b.id, b);
+  return b;
+}
+/** 便捷读取：window.__BUILDING__('shijia') */
+window.__BUILDING__ = (id) => BUILDINGS.get(id);
+
+// H2. 中轴殿宇 → 先建模、再注册为 Building 实例（山门殿由 build.py 的 HALL_BLOCK 建好，group 变量 hall）
+registerBuilding({ id: 'tianwang', name: '五凤山门', kind: 'axis',
+  group: hall, spec: { W: 26.0, D: 13.5, H: 12.8, z: 0 }, baseY: 0 });
+AXIS.halls.forEach(s => {
+  const g = makeHall(s, 0, s.id);
+  modelRoot.add(g);
+  registerBuilding({ id: s.id, name: s.name, kind: 'axis', group: g, spec: s, baseY: 0 });
+});
 
 // H3. 四进四合院：依航拍图重排左右配殿，转角廊向内闭合
 AXIS.courts.forEach((c, i) => {
-  modelRoot.add(makeSideHall(c, -1, c.left, 0, 'side_' + i + '_l', true));
-  modelRoot.add(makeSideHall(c, 1, c.right, 0, 'side_' + i + '_r', true));
-  // 前院一进配殿外移后，转角廊同步外移，其内端从 10.7 退到 14.7，中庭不再被挤窄
-  const cx = c.x ? FRONT_COURT.crossX : 14.1;
+  [[-1, c.left, 'l'], [1, c.right, 'r']].forEach(([side, name, tag]) => {
+    const g = makeSideHall(c, side, name, 0, 'side_' + i + '_' + tag, true);
+    modelRoot.add(g);
+    registerBuilding({ id: 'side_' + i + '_' + tag, name, kind: 'side',
+      group: g, spec: c, baseY: 0 });
+  });
+  // 转角廊贴着本进配殿内缘：配殿随中轴同步外扩后，转角廊中心 = 配殿中心 - 6.4，
+  // 其外端搭在配殿台基上、内端退到中庭边，随各进 x 依次微收，保持四合院闭合。
+  const cx = (c.x || AXIS.sideX) - 6.4;
   [c.mid - c.len / 2, c.mid + c.len / 2].forEach(z => {
     modelRoot.add(makeCrossLink(z, -1, 0, cx));
     modelRoot.add(makeCrossLink(z, 1, 0, cx));
   });
 });
 
-// H3b. 前院：左右两条中國式抄手廊 + 错台处横向连廊
+// H3b. 前院：左右两条中国式抄手廊 + 错台处横向连廊
 [-1, 1].forEach(s => {
   modelRoot.add(makeFrontCloister(s));
   modelRoot.add(makeJunctionLink(s));
 });
 
 // H4. 观音堂前红墙院门 + 锦鲤池与跨池石桥（观音堂与凌霄阁之间）
-modelRoot.add(makeRedWallGate(-110));  // 潮音堂(-88) 後、觀音堂(-132) 之前的朱牆院門
+modelRoot.add(makeRedWallGate(-110));  // 潮音堂(-88) 后、观音堂(-132) 之前的朱墙院门
 modelRoot.add(makePond(AXIS.pondZ));
 modelRoot.add(makeBridge(AXIS.pondZ));
 
 // H5. 抬高台地 + 凌霄阁（二层平坐栏杆） + 台上两侧配院
 modelRoot.add(makeTerrace(AXIS.terraceZ, AXIS.terraceY));
-const LINGXIAO = { name: '凌霄閣', z: AXIS.lingxiaoZ, W: 23.0, D: 11.6, H: 10.4,
-  two: true, gallery: true, rise: 3.45, pw: 4.5 };
-modelRoot.add(makeHall(LINGXIAO, AXIS.terraceY, 'lingxiao'));
-const topCourt = { mid: AXIS.lingxiaoZ, len: 12 };
-modelRoot.add(makeSideHall(topCourt, -1, '西配院', AXIS.terraceY, 'wenshu'));
-modelRoot.add(makeSideHall(topCourt, 1, '東配院', AXIS.terraceY, 'puxian'));
+const LINGXIAO = { name: '凌霄閣', z: AXIS.lingxiaoZ, W: 28.0, D: 16.5, H: 12.4,
+  two: true, gallery: true, rise: 3.60, pw: 4.5 };
+const lxGroup = makeHall(LINGXIAO, AXIS.terraceY, 'lingxiao');
+modelRoot.add(lxGroup);
+registerBuilding({ id: 'lingxiao', name: '凌霄閣', kind: 'axis',
+  group: lxGroup, spec: LINGXIAO, baseY: AXIS.terraceY });
+// 台地台面仅 x∈[-23,23]，台上配院须保持 x=20.5，不随地面配殿外扩（否则悬空）
+const topCourt = { mid: AXIS.lingxiaoZ, len: 12, x: 20.5 };
+[[-1, '西配院', 'wenshu'], [1, '东配院', 'puxian']].forEach(([side, name, id]) => {
+  const g = makeSideHall(topCourt, side, name, AXIS.terraceY, id);
+  modelRoot.add(g);
+  registerBuilding({ id, name, kind: 'side', group: g, spec: topCourt, baseY: AXIS.terraceY });
+});
 [topCourt.mid - topCourt.len / 2, topCourt.mid + topCourt.len / 2].forEach(z => {
   modelRoot.add(makeCrossLink(z, -1, AXIS.terraceY));
   modelRoot.add(makeCrossLink(z, 1, AXIS.terraceY));
 });
 
-// H5b. 航拍图标注的导览节点：请香处香亭、进口 / 出口牌坊、各殿红底金字说明牌
-modelRoot.add(makeIncensePavilion(0, 32));
-modelRoot.add(makePailou('進口', -9, 24, 0));
-modelRoot.add(makePailou('出口', -30, -59, -Math.PI / 2));
+// H5b. 航拍图标注的导览节点：各殿红底金字说明牌
 SITE_PLAN.filter(s => s.sign).forEach(s => modelRoot.add(makeGuideSign(s)));
 
 // H6. 对称松柏：院落四角、池畔、高台两侧

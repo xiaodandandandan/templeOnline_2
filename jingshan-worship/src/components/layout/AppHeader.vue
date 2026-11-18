@@ -3,19 +3,19 @@ import { computed } from 'vue'
 import { useTempleStore } from '@/stores/temple'
 
 const store = useTempleStore()
-const status = computed(() => (store.ready ? '三維就緒' : '載入中'))
+const status = computed(() => (store.ready ? '三维就绪' : '载入中'))
 </script>
 
 <template>
   <header class="header">
     <div class="brand">
-      <span class="seal">徑</span>
+      <span class="seal">径</span>
       <span class="brand-txt">
-        <strong class="serif">徑山萬壽禪寺</strong>
+        <strong class="serif">径山万寿禅寺</strong>
       </span>
     </div>
 
-    <div class="tip">滾輪縮放 · 拉遠可覽全寺</div>
+    <div class="tip">滚轮缩放 · 拉远可览全寺</div>
 
     <div class="status" :class="{ on: store.ready }">
       <i class="dot" />
@@ -26,17 +26,22 @@ const status = computed(() => (store.ready ? '三維就緒' : '載入中'))
 
 <style scoped>
 .header {
-  height: var(--header-h);
+  /* 刘海屏：内容让进安全区，页头总高度同步加高，避免品牌被状态栏压住 */
+  height: calc(var(--header-h) + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
   display: flex;
   align-items: center;
   gap: 28px;
-  padding: 0 26px;
-  background: rgba(255, 252, 245, 0.92);
+  padding-left: 26px;
+  padding-right: 26px;
+  background: rgba(255, 252, 245, 0.97);
   border-bottom: 1px solid var(--line);
   position: sticky;
   top: 0;
   z-index: 30;
-  backdrop-filter: blur(10px);
+  /* 页头常驻在 3D 画布上方：这里若用 backdrop-filter，合成器需要不断从跨文档
+   * iframe 重捕获背景，移动端会持续闪烁并明显掉帧。改用接近不透明的底色。 */
+  transform: translateZ(0);
 }
 .brand {
   display: flex;
@@ -92,7 +97,8 @@ const status = computed(() => (store.ready ? '三維就緒' : '載入中'))
 @media (max-width: 900px) {
   .header {
     gap: 12px;
-    padding: 0 14px;
+    padding-left: max(14px, env(safe-area-inset-left, 0px));
+    padding-right: max(14px, env(safe-area-inset-right, 0px));
   }
   .status,
   .tip {

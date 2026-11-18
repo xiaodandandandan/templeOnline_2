@@ -60,10 +60,10 @@ function backToGuide(): void {
     <header class="page-head">
       <div>
         <span class="eyebrow">WORSHIP RITUAL · STATE MACHINE</span>
-        <h1 class="serif">{{ hall.name }} · 禮佛儀軌</h1>
+        <h1 class="serif">{{ hall.name }} · 礼佛仪轨</h1>
         <p>{{ hall.deity }} · {{ hall.etiquette[0] }}</p>
       </div>
-      <button class="btn" @click="backToGuide">← 返回三維導覽</button>
+      <button class="btn" @click="backToGuide">← 返回三维导览</button>
     </header>
 
     <div class="layout">
@@ -75,8 +75,8 @@ function backToGuide(): void {
         <div class="bar"><i :style="{ width: `${worship.progress}%` }" /></div>
         <RitualStepper v-if="session" :session="session" />
         <div v-else class="idle">
-          <p>儀軌共 {{ RITUAL_STEPS.length }} 步，依序進行；標註「可略」的步驟可跳過。</p>
-          <button class="btn btn-primary" @click="begin">開始禮佛</button>
+          <p>仪轨共 {{ RITUAL_STEPS.length }} 步，依序进行；标注“可略”的步骤可跳过。</p>
+          <button class="btn btn-primary" @click="begin">开始礼佛</button>
         </div>
       </section>
 
@@ -85,17 +85,17 @@ function backToGuide(): void {
           <div class="step-head">
             <span class="eyebrow">STEP {{ session.stepIndex + 1 }} / {{ RITUAL_STEPS.length }}</span>
             <h2 class="serif">{{ step.title }}</h2>
-            <p class="sub">{{ step.subtitle }} · 建議 {{ step.seconds }} 秒</p>
+            <p class="sub">{{ step.subtitle }} · 建议 {{ step.seconds }} 秒</p>
           </div>
           <div class="instruction">
-            <span class="seal serif">儀</span>
+            <span class="seal serif">仪</span>
             <p>{{ step.instruction }}</p>
           </div>
 
           <div v-if="isOfferingStep" class="offerings">
             <div class="offerings-head">
-              <span class="eyebrow">虛擬供品（無實物與交易）</span>
-              <small>資質開關：{{ appConfig.enableOffering ? '已開啟' : '演示模式' }}</small>
+              <span class="eyebrow">虚拟供品（无实物与交易）</span>
+              <small>资质开关：{{ appConfig.enableOffering ? '已开启' : '演示模式' }}</small>
             </div>
             <div class="offer-grid">
               <button
@@ -115,9 +115,9 @@ function backToGuide(): void {
             <button class="btn" :disabled="session.stepIndex === 0" @click="worship.apply('prev')">
               上一步
             </button>
-            <button v-if="step.optional" class="btn" @click="worship.apply('skip')">略過此步</button>
+            <button v-if="step.optional" class="btn" @click="worship.apply('skip')">略过此步</button>
             <button class="btn btn-primary" @click="worship.apply('next')">
-              {{ session.stepIndex === RITUAL_STEPS.length - 1 ? '禮成 →' : '完成此步 →' }}
+              {{ session.stepIndex === RITUAL_STEPS.length - 1 ? '礼成 →' : '完成此步 →' }}
             </button>
           </div>
         </template>
@@ -125,35 +125,35 @@ function backToGuide(): void {
         <template v-else-if="session && worship.isCompleted">
           <div class="done">
             <span class="done-seal serif">回向</span>
-            <h2 class="serif">禮成</h2>
-            <p>所行禮節已依序完成。可將此作息留存於本設備，或自願寫下一句祈願。</p>
+            <h2 class="serif">礼成</h2>
+            <p>所行礼节已依序完成。可将此作息留存于本设备，或自愿写下一句祈愿。</p>
 
             <div class="done-stat">
               <span>完成 {{ session.completedSteps.length }} 步</span>
-              <span>略過 {{ session.skippedSteps.length }} 步</span>
-              <span>供品 {{ session.offerings.length }} 項</span>
+              <span>略过 {{ session.skippedSteps.length }} 步</span>
+              <span>供品 {{ session.offerings.length }} 项</span>
             </div>
 
             <div class="record">
               <button class="btn btn-primary" :disabled="worship.saving || !!worship.saved" @click="finishAndSave">
-                {{ worship.saved ? '✓ 已留存記錄' : worship.saving ? '保存中…' : '留存禮佛記錄' }}
+                {{ worship.saved ? '✓ 已留存记录' : worship.saving ? '保存中…' : '留存礼佛记录' }}
               </button>
-              <RouterLink v-if="worship.saved" class="btn" to="/merit">查看記錄</RouterLink>
+              <RouterLink v-if="worship.saved" class="btn" to="/merit">查看记录</RouterLink>
             </div>
 
             <div class="wish-box">
-              <span class="eyebrow">自願 · 祈願一句</span>
+              <span class="eyebrow">自愿 · 祈愿一句</span>
               <div class="wish-row">
-                <select v-model="wishCategory" aria-label="祈願類別">
+                <select v-model="wishCategory" aria-label="祈愿类别">
                   <option v-for="c in WISH_CATEGORIES" :key="c.key" :value="c.key">{{ c.label }}</option>
                 </select>
-                <input v-model="wishText" maxlength="120" placeholder="願…" @keyup.enter="submitWish" />
+                <input v-model="wishText" maxlength="120" placeholder="愿…" @keyup.enter="submitWish" />
                 <button class="btn" :disabled="wishes.submitting || wishSaved" @click="submitWish">
-                  {{ wishSaved ? '已寫下' : '寫下' }}
+                  {{ wishSaved ? '已写下' : '写下' }}
                 </button>
               </div>
-              <small v-if="appConfig.moderation">提交後進入「待審核」狀態，僅本設備可見。</small>
-              <small v-else>已直接顯示於祈願牆。</small>
+              <small v-if="appConfig.moderation">提交后进入“待审核”状态，仅本设备可见。</small>
+              <small v-else>已直接显示于祈愿墙。</small>
             </div>
 
             <p v-if="worship.error || wishes.error" class="error">{{ worship.error || wishes.error }}</p>
@@ -163,14 +163,14 @@ function backToGuide(): void {
 
         <template v-else>
           <div class="placeholder">
-            <p class="serif">入殿之前，先淨手整容。</p>
-            <small>左側點擊「開始禮佛」進入儀軌流程</small>
+            <p class="serif">入殿之前，先净手整容。</p>
+            <small>左侧点击“开始礼佛”进入仪轨流程</small>
           </div>
         </template>
       </section>
 
       <aside class="right panel">
-        <span class="eyebrow">殿宇須知</span>
+        <span class="eyebrow">殿宇须知</span>
         <h3 class="serif">{{ hall.name }}</h3>
         <ul>
           <li v-for="(t, i) in hall.etiquette" :key="i">{{ t }}</li>
@@ -178,9 +178,9 @@ function backToGuide(): void {
         <hr class="divider" />
         <p class="muted small">{{ hall.summary }}</p>
         <hr class="divider" />
-        <span class="eyebrow">合規說明</span>
+        <span class="eyebrow">合规说明</span>
         <p class="small">
-          本頁為傳統禮節的流程演示與前端狀態機示例，不涉及宗教服務資質、實物供養、支付或功德量化。
+          本页为传统礼节的流程演示与前端状态机示例，不涉及宗教服务资质、实物供养、支付或功德量化。
         </p>
       </aside>
     </div>

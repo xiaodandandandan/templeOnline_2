@@ -34,11 +34,13 @@ const EMPTY_AVATAR: AvatarState = {
 }
 
 /**
- * 3D 视图状态：唯一的「场景真相」来源。
+ * 3D 视图状态：唯一的“场景真相”来源。
  * 组件不直接操作 iframe，一律通过此 store 的 action 下发命令。
  */
 export const useTempleStore = defineStore('temple', () => {
   const ready = ref(false)
+  /** WebGL 上下文是否丢失（手机切后台/内存回收时），用于切换降级图 */
+  const contextLost = ref(false)
   const stats = ref<SceneStats>({ meshes: 0, tris: 0 })
   const anchors = ref<HallAnchor[]>([])
   const interiorAnchors = ref<InteriorAnchor[]>([])
@@ -63,7 +65,7 @@ export const useTempleStore = defineStore('temple', () => {
   const insideHallId = computed(() => avatar.value.insideHallId)
   const position = computed(() => `X ${avatar.value.x.toFixed(1)} · Z ${avatar.value.z.toFixed(1)}`)
   const isMoving = computed(() => avatar.value.moving)
-  /** 拉远到一定距离后按「全寺俯瞰」呈现：显示全部殿名、不再只标注当前殿 */
+  /** 拉远到一定距离后按“全寺俯瞰”呈现：显示全部殿名、不再只标注当前殿 */
   const overview = computed(() => zoomDistance.value > 150)
   /** 拉远程度 0~100：进度条随滚轮向外拉远而增长 */
   const zoomOut = computed(() =>
@@ -132,6 +134,10 @@ export const useTempleStore = defineStore('temple', () => {
       case 'error':
         errorMessage.value = event.message
         break
+      case 'webgl':
+        contextLost.value = event.state === 'lost'
+        if (event.state === 'restored') errorMessage.value = ''
+        break
       case 'hallFocused':
         break
     }
@@ -148,6 +154,14 @@ export const useTempleStore = defineStore('temple', () => {
 
   function setMove(forward: number, turn = 0, run = false): void {
     send({ cmd: 'setMove', forward, turn, run })
+  }
+
+  /**
+   * 虚拟摇杆：x 向右为正、y 向前为正（屏幕坐标，-1~1）。
+   * 运行时按镜头朝向换算成世界位移，人物自动转向行进方向，因此“前后左右”都能走。
+   */
+  function setMoveVector(x: number, y: number): void {
+    send({ cmd: 'setMove', forward: y, turn: 0, strafe: x })
   }
 
   /** HUD 覆盖层上的滚轮转交给 iframe（iframe 自身的滚轮由运行时直接处理） */
@@ -211,6 +225,7 @@ export const useTempleStore = defineStore('temple', () => {
 
   return {
     ready,
+    contextLost,
     stats,
     anchors,
     interiorAnchors,
@@ -234,6 +249,7 @@ export const useTempleStore = defineStore('temple', () => {
     send,
     setMode,
     setMove,
+    setMoveVector,
     wheel,
     setZoom,
     teleport,

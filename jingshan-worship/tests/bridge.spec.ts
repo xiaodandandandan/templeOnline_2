@@ -9,12 +9,12 @@ const envelope = (payload: unknown) => ({
   payload,
 })
 
-describe('橋接訊息契約', () => {
+describe('桥接讯息契约', () => {
   it('接受合法事件信封', () => {
     expect(parseBridgeMessage(envelope({ evt: 'ready', stats: { meshes: 1, tris: 2 } }))).not.toBeNull()
   })
 
-  it('丟棄通道 / 版本 / 類型不符的訊息', () => {
+  it('丢弃通道 / 版本 / 类型不符的讯息', () => {
     expect(parseBridgeMessage(null)).toBeNull()
     expect(parseBridgeMessage({ __channel: 'OTHER', version: 1, kind: 'evt', payload: { evt: 'ready' } })).toBeNull()
     expect(parseBridgeMessage({ ...envelope({ evt: 'ready' }), version: 99 })).toBeNull()
@@ -23,8 +23,8 @@ describe('橋接訊息契約', () => {
   })
 })
 
-describe('TempleBridge 命令隊列', () => {
-  it('ready 之前排隊、ready 之後按序下發', () => {
+describe('TempleBridge 命令队列', () => {
+  it('ready 之前排队、ready 之后按序下发', () => {
     const postMessage = vi.fn()
     const fakeWin = { postMessage } as unknown as Window
     const frame = { contentWindow: fakeWin } as unknown as HTMLIFrameElement
@@ -49,7 +49,7 @@ describe('TempleBridge 命令隊列', () => {
     bridge.detach()
   })
 
-  it('忽略非綁定 iframe 來源的事件', () => {
+  it('忽略非绑定 iframe 来源的事件', () => {
     const frame = { contentWindow: { postMessage: vi.fn() } } as unknown as HTMLIFrameElement
     const bridge = new TempleBridge()
     bridge.attach(frame)

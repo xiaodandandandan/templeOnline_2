@@ -3,7 +3,7 @@
 import io, os, sys, urllib.request, urllib.parse, shutil, difflib
 
 TX_URL = 'https://workbuddy-space-static.codebuddy.work/page/PBrUoiNsIkIddSBM2Fguqi/GX2Nrf_WTnhf/'
-NAME = '徑山萬壽禪寺_山門殿_threejs.html'
+NAME = '径山万寿禅寺_山门殿_threejs.html'
 TMP = 'C:/Users/jadezhang/WorkBuddy/2026-11-14-13-41-28/_tx'
 NEW = 'C:/Users/jadezhang/WorkBuddy/2026-11-14-13-41-28/jingshan-temple/index.html'
 

@@ -26,7 +26,7 @@ async function submit(): Promise<void> {
   })
   if (result) {
     text.value = ''
-    notice.value = appConfig.moderation ? '已寫下，待審核（僅本設備可見）' : '已寫下'
+    notice.value = appConfig.moderation ? '已写下，待审核（仅本设备可见）' : '已写下'
     window.setTimeout(() => (notice.value = ''), 3200)
   }
 }
@@ -37,15 +37,15 @@ async function submit(): Promise<void> {
     <header class="head">
       <div>
         <span class="eyebrow">WISH WALL · MODERATED CONTENT</span>
-        <h1 class="serif">祈願牆</h1>
-        <p>文字留存於本設備；新增內容依開關進入審核態，不含任何交易或實物供養。</p>
+        <h1 class="serif">祈愿墙</h1>
+        <p>文字留存于本设备；新增内容依开关进入审核态，不含任何交易或实物供养。</p>
       </div>
-      <div class="count"><b>{{ store.visible.length }}</b><span>則</span></div>
+      <div class="count"><b>{{ store.visible.length }}</b><span>则</span></div>
     </header>
 
     <div class="layout">
       <section class="form panel">
-        <span class="eyebrow">寫下一句</span>
+        <span class="eyebrow">写下一句</span>
         <label class="field">
           <span>殿宇</span>
           <select v-model="hallId">
@@ -53,14 +53,14 @@ async function submit(): Promise<void> {
           </select>
         </label>
         <label class="field">
-          <span>類別</span>
+          <span>类别</span>
           <select v-model="category">
             <option v-for="c in WISH_CATEGORIES" :key="c.key" :value="c.key">{{ c.label }}</option>
           </select>
         </label>
         <label class="field">
-          <span>祈願文字</span>
-          <textarea v-model="text" rows="4" maxlength="120" placeholder="願…" />
+          <span>祈愿文字</span>
+          <textarea v-model="text" rows="4" maxlength="120" placeholder="愿…" />
           <small>{{ text.length }} / 120</small>
         </label>
         <label class="check">
@@ -72,7 +72,7 @@ async function submit(): Promise<void> {
           <input v-model="author" maxlength="20" placeholder="可留空" />
         </label>
         <button class="btn btn-primary wide" :disabled="store.submitting" @click="submit">
-          {{ store.submitting ? '提交中…' : '寫下祈願' }}
+          {{ store.submitting ? '提交中…' : '写下祈愿' }}
         </button>
         <p v-if="notice" class="notice">{{ notice }}</p>
         <p v-if="store.error" class="error">{{ store.error }}</p>
@@ -80,21 +80,21 @@ async function submit(): Promise<void> {
 
       <section class="list-wrap">
         <div class="filters">
-          <select v-model="store.hallFilter" aria-label="按殿宇篩選">
+          <select v-model="store.hallFilter" aria-label="按殿宇筛选">
             <option value="">全部殿宇</option>
             <option v-for="h in AXIS_HALLS" :key="h.id" :value="h.id">{{ h.name }}</option>
           </select>
-          <select v-model="store.categoryFilter" aria-label="按類別篩選">
-            <option value="">全部類別</option>
+          <select v-model="store.categoryFilter" aria-label="按类别筛选">
+            <option value="">全部类别</option>
             <option v-for="c in WISH_CATEGORIES" :key="c.key" :value="c.key">{{ c.label }}</option>
           </select>
           <button class="btn btn-ghost" @click="store.refresh()">刷新</button>
         </div>
 
-        <p v-if="store.loading" class="muted">讀取中…</p>
+        <p v-if="store.loading" class="muted">读取中…</p>
         <div v-else class="list">
           <WishCard v-for="w in store.visible" :key="w.id" :wish="w" />
-          <p v-if="!store.visible.length" class="muted">尚無符合條件的祈願。</p>
+          <p v-if="!store.visible.length" class="muted">尚无符合条件的祈愿。</p>
         </div>
       </section>
     </div>

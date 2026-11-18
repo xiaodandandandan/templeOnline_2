@@ -8,21 +8,21 @@ const sample: InteriorAnchor[] = [
   { hallId: 'shijia', kind: 'altar', x: 0, y: 1.6, z: -53 },
 ]
 
-describe('室內預留錨點', () => {
-  it('按殿宇與類型篩選，座標保持世界值', () => {
+describe('室内预留锚点', () => {
+  it('按殿宇与类型筛选，座标保持世界值', () => {
     expect(anchorsOf(sample, 'tianwang')).toHaveLength(3)
     expect(anchorsOf(sample, 'tianwang', 'cushion')).toHaveLength(2)
     expect(anchorsOf(sample, 'shijia', 'cushion')).toHaveLength(0)
     expect(anchorsOf(sample, 'tianwang', 'statue')[0].y).toBe(1.7)
   })
 
-  it('八類錨點均有後續交互所需的標籤', () => {
+  it('八类锚点均有后续交互所需的标签', () => {
     expect(Object.keys(INTERIOR_PROP_LABELS).sort()).toEqual(
       ['altar', 'beads', 'cushion', 'incense', 'lantern', 'moktak', 'mural', 'statue'],
     )
   })
 
-  it('蒲團錨點攜帶面朝主尊的朝向與座號', () => {
+  it('蒲团锚点携带面朝主尊的朝向与座号', () => {
     const seat = anchorsOf(sample, 'tianwang', 'cushion')[0]
     expect(seat.yaw).toBe(0)
     expect(seat.seat).toBe(1)

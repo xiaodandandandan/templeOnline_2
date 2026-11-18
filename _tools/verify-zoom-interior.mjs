@@ -37,7 +37,7 @@ await sleep(2200)
 const frame = page.frames().find((f) => f.url().includes('/temple/index.html'))
 const boot = await page.evaluate(() => ({
   aboutLinks: document.querySelectorAll('a[href="/about"]').length,
-  aboutText: (document.body.innerText.match(/工程架構/g) || []).length,
+  aboutText: (document.body.innerText.match(/工程架构/g) || []).length,
   zoomPanel: !!document.querySelector('.top-right'),
   marks: document.querySelectorAll('.hall-mark').length,
   pos: document.querySelector('.pos')?.textContent.trim(),
@@ -164,7 +164,7 @@ await sleep(400)
 console.log('ABOUT REDIRECT', JSON.stringify(await page.evaluate(() => ({
   path: location.pathname,
   stage: !!document.querySelector('.stage'),
-  aboutText: (document.body.innerText.match(/工程架構/g) || []).length,
+  aboutText: (document.body.innerText.match(/工程架构/g) || []).length,
 }))))
 
 console.log('JS ERRORS', errors.length ? JSON.stringify(errors.slice(0, 10)) : 'none')

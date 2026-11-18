@@ -45,8 +45,8 @@ console.log('RUNTIME', JSON.stringify(runtime))
 
 const layout = await page.evaluate(() => ({
   nav: [...document.querySelectorAll('.nav a')].map((a) => a.textContent.trim()),
-  ritualEntry: document.body.innerText.includes('進入儀軌'),
-  ritualWord: document.body.innerText.includes('禮佛儀軌'),
+  ritualEntry: document.body.innerText.includes('进入仪轨'),
+  ritualWord: document.body.innerText.includes('礼佛仪轨'),
   kneelBtn: document.querySelector('.bottom-right .btn-primary')?.textContent.replace(/\s+/g, ' ').trim() ?? '',
   toolbar: document.querySelectorAll('.toolbar').length,
   footer: document.querySelectorAll('.footer').length,

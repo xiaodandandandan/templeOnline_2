@@ -32,12 +32,12 @@ export interface InteriorAnchor {
 export const INTERIOR_PROP_LABELS: Record<InteriorPropKind, string> = {
   statue: '佛像',
   altar: '佛台',
-  incense: '香爐',
-  cushion: '蒲團',
-  mural: '壁畫背屏',
-  moktak: '木魚',
+  incense: '香炉',
+  cushion: '蒲团',
+  mural: '壁画背屏',
+  moktak: '木鱼',
   beads: '念珠',
-  lantern: '蓮花燈',
+  lantern: '莲花灯',
 }
 
 export function anchorsOf(

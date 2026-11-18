@@ -1,6 +1,6 @@
 /* 场景代码 */
 /* =========================================================================
- * 徑山萬壽禪寺 · 山門殿  ——  Three.js 程序化复原
+ * 径山万寿禅寺 · 山门殿  ——  Three.js 程序化复原
  * 依据照片拆解：重檐庑殿/歇山顶、夸张飞檐、白墙栗色木构、三券门、
  * 左右钟鼓楼、石狮、石经幢、古杉、廊庑、石板御道
  * 全部几何由代码生成，无任何外部模型 / 贴图依赖
@@ -165,14 +165,34 @@ const M = {
 
 /* ---------- 3. 渲染器 / 场景 / 光照 ---------- */
 const container = document.getElementById('scene');
-const renderer = new T.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
+/* 移动端适配：用较低的像素比上限，避免高分屏手机 GPU 填充率过载掉帧；
+ * 桌面端维持 2，视觉与原来一致。以 UA + 触控粗指针双重判定，覆盖平板。 */
+const isMobileDevice =
+  /Android|iPhone|iPad|iPod|Mobile|Silk/i.test(navigator.userAgent) ||
+  (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+const dprCap = isMobileDevice ? 1.5 : 2;
+const renderer = new T.WebGLRenderer({
+  antialias: true,
+  alpha: false,
+  powerPreference: isMobileDevice ? 'default' : 'high-performance',
+});
+/* 画布尺寸统一取“容器实测整数尺寸”，不用 window.innerWidth/innerHeight：
+ * 单文件 App 里场景跑在 iframe 中，宿主布局高度带小数时 innerWidth/Height 与容器
+ * 可能差 1px，导致缓冲尺寸与 CSS 尺寸错位、末行采样抖动。 */
+const viewportSize = () => ({
+  w: Math.max(1, Math.round(container.clientWidth || window.innerWidth)),
+  h: Math.max(1, Math.round(container.clientHeight || window.innerHeight)),
+});
+const S0 = viewportSize();
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, dprCap));
+renderer.setSize(S0.w, S0.h, false); // false：CSS 尺寸由 #scene canvas{width:100%} 负责
 renderer.outputColorSpace = T.SRGBColorSpace;
 renderer.toneMapping = T.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = T.PCFSoftShadowMap;
+/* 移动端降一档阴影：PCFSoft 2048 在手机上填充率吃紧，阴影边界也更容易闪；
+ * 降到 PCF 1024 后帧率更稳，近景观感差异很小。 */
+renderer.shadowMap.type = isMobileDevice ? T.PCFShadowMap : T.PCFSoftShadowMap;
 container.appendChild(renderer.domElement);
 
 const scene = new T.Scene();
@@ -200,18 +220,25 @@ scene.add(hemi);
 const sun = new T.DirectionalLight(0xfff2da, 2.9);
 sun.position.set(-26, 36, 28);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.set(isMobileDevice ? 1024 : 2048, isMobileDevice ? 1024 : 2048);
 sun.shadow.camera.left = -42; sun.shadow.camera.right = 42;
 sun.shadow.camera.top = 34; sun.shadow.camera.bottom = -30;
 sun.shadow.camera.near = 1; sun.shadow.camera.far = 130;
 sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.025;
 scene.add(sun);
 scene.add(new T.AmbientLight(0xffffff, 0.22));
+// 北侧补光：主光在东南，背面实景同样受日光；加一盏无阴影弱补光避免后立面发黑
+const northFill = new T.DirectionalLight(0xfff2da, 0.85);
+northFill.position.set(0, 24, -40);
+scene.add(northFill);
 
-const camera = new T.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 600);
+const camera = new T.PerspectiveCamera(40, S0.w / S0.h, 0.1, 600);
 camera.position.set(0, 8.8, 36);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 6.0, 0);
+/* 阻尼在“自由观景”下需要，但第三人称漫游里每帧都会由运行时写死机位，
+ * 残留的 damping 会与自定义相机构位互相拉扯，静止时表现为高频微抖。
+ * 运行时切到第三人称时会置 false（见 bridge-runtime）。 */
 controls.enableDamping = true; controls.dampingFactor = 0.06;
 controls.minDistance = 12; controls.maxDistance = 110;
 controls.maxPolarAngle = Math.PI * 0.495;
@@ -396,24 +423,153 @@ function makeRoof(w, d, eaveY, rise, o = {}) {
   return g;
 }
 
+/* ---------- 4b. 人字形双坡屋顶（悬山）：脊沿 z，三角山面朝 ±z ---------- */
+function makeGableRoof(w, d, eaveY, rise, o = {}) {
+  const {
+    curve = 1.35, corner = 0.52, seg = 22, thickness = 0.20,
+    tileRepeat = 2.6, gableMat = null, gableW = 0.24, overhang = 0.52
+  } = o;
+  const hw = w / 2, hd = d / 2;
+  const g = new T.Group();
+
+  // 高度场：x=0 为脊，向两坡下泄；z 两端为山面，檐角起翘
+  function H(x, z) {
+    const t = Math.min(1, Math.abs(x) / hw);
+    let y = eaveY + rise * Math.pow(1 - t, curve);
+    const u = Math.abs(x) / hw, v = Math.abs(z) / hd;
+    const c = smooth(0.48, 1, u) * smooth(0.52, 1, v);
+    y += corner * rise * Math.pow(c, 1.25);
+    y += 0.045 * rise * smooth(0.84, 1, v);
+    return y;
+  }
+
+  const N = seg, pos = [], uvs = [], idx = [];
+  for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) {
+    const x = -hw + w * i / N, z = -hd + d * j / N;
+    pos.push(x, H(x, z), z); uvs.push(i / N, j / N);
+  }
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const a = j * (N + 1) + i, b = a + 1, c = a + N + 1, e = c + 1;
+    idx.push(a, c, b, b, c, e);
+  }
+  const geo = new T.BufferGeometry();
+  geo.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new T.Float32BufferAttribute(uvs, 2));
+  geo.setIndex(idx); geo.computeVertexNormals();
+
+  const tm = M.tileBase.clone();
+  tm.map = tileTex.clone();
+  tm.map.repeat.set(w / tileRepeat, d / tileRepeat);
+  tm.map.needsUpdate = true;
+  const top = new T.Mesh(geo, tm); top.castShadow = true; top.receiveShadow = true; g.add(top);
+  const under = new T.Mesh(geo.clone().translate(0, -thickness, 0), M.tileUnder);
+  under.receiveShadow = true; g.add(under);
+
+  // 两侧檐口（沿 z 的两条长边）：封边 + 檐口线
+  [-1, 1].forEach(sx => {
+    const sp = [], si = [];
+    for (let j = 0; j <= N; j++) {
+      const z = -hd + d * j / N, x = sx * hw, y = H(x, z);
+      sp.push(x, y, z, x, y - thickness, z);
+      if (j < N) { const a = j * 2; si.push(a, a + 1, a + 2, a + 2, a + 1, a + 3); }
+    }
+    const sg = new T.BufferGeometry();
+    sg.setAttribute('position', new T.Float32BufferAttribute(sp, 3));
+    sg.setIndex(si); sg.computeVertexNormals();
+    g.add(new T.Mesh(sg, M.eaveEdge));
+    // 檐口圆线
+    const pts = [];
+    for (let j = 0; j <= N; j++) {
+      const z = -hd + d * j / N;
+      pts.push(new T.Vector3(sx * hw, H(sx * hw, z) - thickness * 0.45, z));
+    }
+    g.add(new T.Mesh(
+      new T.TubeGeometry(new T.CatmullRomCurve3(pts), 30, 0.075, 6, false), M.ridge));
+    // 椽子
+    const rf = new T.InstancedMesh(unitBox, M.woodDark, N);
+    const mm = new T.Matrix4(), qq = new T.Quaternion(), vv = new T.Vector3(), ss = new T.Vector3(0.075, 0.085, 0.62);
+    for (let j = 0; j < N; j++) {
+      const z = -hd + d * (j + 0.5) / N;
+      mm.compose(vv.set(sx * (hw - 0.30), H(sx * (hw - 0.30), z) - thickness - 0.05, z), qq, ss);
+      rf.setMatrixAt(j, mm);
+    }
+    rf.castShadow = true; g.add(rf);
+  });
+
+  // 山面三角墙（悬山山花）：两端内缩 overhang，瓦檐悬出山墙之外
+  const gm = gableMat || M.wall;
+  [-1, 1].forEach(sz => {
+    const zw = sz * (hd - overhang);
+    const sh = new T.Shape();
+    sh.moveTo(-hw, eaveY - 0.05);
+    for (let i = 0; i <= 16; i++) {
+      const t = i / 16, x = -hw + w * t;
+      sh.lineTo(x, eaveY + rise * Math.pow(1 - Math.abs(x) / hw, curve) - 0.05);
+    }
+    sh.lineTo(hw, eaveY - 0.05);
+    sh.lineTo(-hw, eaveY - 0.05);
+    g.add(makeMesh(new T.ExtrudeGeometry(sh, { depth: gableW, bevelEnabled: false }),
+      M.wallShade, 0, 0, zw - (sz > 0 ? 0 : gableW)));
+    // 博风板：粗壮的深色边框压在瓦檐与山墙之间（悬山做法）
+    const bf = [];
+    for (let i = 0; i <= 20; i++) {
+      const t = i / 20, x = -hw + w * t;
+      bf.push(new T.Vector3(x, eaveY + rise * Math.pow(1 - Math.abs(x) / hw, curve) + 0.20,
+        sz * (zw + 0.10)));
+    }
+    g.add(new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(bf), 32, 0.17, 6, false), M.ridge));
+    // 山花内的悬鱼（垂脊中央的木饰）
+    const tipY = eaveY + rise - 0.05;
+    g.add(box(0.30, 0.72, 0.10, M.woodDark, 0, tipY - 0.42, sz * (zw + 0.14)));
+    g.add(box(0.16, 0.34, 0.08, M.ridgeTop, 0, tipY - 0.30, sz * (zw + 0.20)));
+    // 山花内的博缝板（两根斜向细木，分隔山花）
+    [-0.45, 0.45].forEach(k => {
+      const bx = k * hw;
+      const by = eaveY + rise * Math.pow(1 - Math.abs(bx) / hw, curve);
+      g.add(box(0.09, by - eaveY + 0.1, 0.07, M.woodDark, bx, (eaveY + by) / 2, sz * (zw + 0.08)));
+    });
+    // 山花内两道横向木枋 + 中央竖枋
+    [0.34, 0.66].forEach(k => {
+      const by = eaveY + (rise - 0.10) * k;
+      const halfW = hw * (1 - k) * 0.96;
+      g.add(box(halfW * 2, 0.10, 0.07, M.woodDark, 0, by, sz * (zw + 0.08)));
+    });
+    g.add(box(0.10, rise * 0.62, 0.07, M.woodDark, 0, eaveY + rise * 0.30, sz * (zw + 0.08)));
+  });
+
+  // 正脊 + 鸱吻（沿 z 方向，长度 d 略收）
+  const yr = H(0, 0);
+  g.add(box(0.44, 0.30, d - 0.5, M.ridge, 0, yr + 0.16, 0));
+  g.add(box(0.54, 0.09, d - 0.4, M.ridgeTop, 0, yr + 0.34, 0));
+  [-1, 1].forEach(sz => {
+    const bz = sz * (hd - 0.25);
+    g.add(box(0.40, 0.66, 0.44, M.ridge, 0, yr + 0.44, bz));
+    const horn = makeMesh(new T.ConeGeometry(0.22, 0.88, 6), M.ridge, 0, yr + 1.00, bz + sz * 0.14);
+    horn.rotation.x = sz * 0.36; g.add(horn);
+  });
+
+  g.userData.heightAt = H;
+  return g;
+}
+
 /* ---------- 5. 拱门 / 门窗构件 ---------- */
 function archShape(cx, w, h) {
+  // 天王殿实景为方形开间（上部为平直横枋，非券洞），按矩形洞口构造
   const s = new T.Shape();
-  const r = w / 2, sh = h - r;
+  const r = w / 2;
   s.moveTo(cx - r, 0);
-  s.lineTo(cx - r, sh);
-  s.absarc(cx, sh, r, Math.PI, 0, true);
+  s.lineTo(cx - r, h);
+  s.lineTo(cx + r, h);
   s.lineTo(cx + r, 0);
   s.lineTo(cx - r, 0);
   return s;
 }
 function archOutline(cx, w, h) {
-  const pts = [], r = w / 2, sh = h - r;
-  for (let k = 0; k <= 18; k++) {
-    const a = Math.PI - Math.PI * k / 18;
-    pts.push([cx + Math.cos(a) * r, sh + Math.sin(a) * r]);
-  }
-  pts.push([cx + r, 0]); pts.push([cx - r, 0]);
+  const r = w / 2, pts = [], n = 5;
+  for (let k = 0; k <= n; k++) pts.push([cx - r, h * k / n]);
+  for (let k = 1; k <= n; k++) pts.push([cx - r + w * k / n, h]);
+  for (let k = 1; k <= n; k++) pts.push([cx + r, h - h * k / n]);
+  for (let k = 1; k < n; k++) pts.push([cx + r - w * k / n, 0]);
   return pts;
 }
 function remapShapeUV(geo, w, h) {
@@ -553,7 +709,7 @@ const hall = new T.Group();
     hall.add(box(0.92, 0.10, 0.10, M.woodMid, x, 1.94, wallZ + 0.58));
   });
 
-  // 横匾「萬年正續」
+  // 横匾“万年正续”
   const pm = new T.MeshStandardMaterial({ map: plaqueMain, color: 0xffffff, roughness: 0.7 });
   hall.add(panel(4.5, 1.05, pm, 0, 5.72, frontZ + 0.22));
   hall.add(box(4.75, 1.22, 0.14, M.woodDark, 0, 5.72, frontZ + 0.13));
@@ -583,49 +739,156 @@ const hall = new T.Group();
 }
 modelRoot.add(hall);
 
-/* ---------- 9. 左右钟鼓楼（二层四角攒尖） ---------- */
+/* ---------- 9. 左右钟鼓楼（台身 · 平坐 · 亭身 · 宝顶） ---------- */
+/* 依据实景航拍：白石台身之上，斗拱出挑承平坐，平坐立木构亭身——坎墙 + 隔扇窗 +
+ * 横披窗 + 额枋，顶覆单檐歇山、正中宝顶；台上以开敞连廊接主殿（见 §10）。
+ * 原“左侧底层开券门”的做法取消：门洞移到连廊下层。 */
+
+/* 木栏杆：望柱 + 寻杖 + 盆唇 + 地栿 + 蜀柱 */
+function railLine(g, ax, az, bx, bz, y, o = {}) {
+  const { h = 1.02, post = 0.13, step = 1.35, bars = 3 } = o;
+  const dx = bx - ax, dz = bz - az;
+  const len = Math.hypot(dx, dz) || 0.001;
+  const n = Math.max(1, Math.round(len / step));
+  const ux = dx / len, uz = dz / len;
+  for (let i = 0; i <= n; i++) {
+    const px = ax + ux * len * i / n, pz = az + uz * len * i / n;
+    g.add(box(post, h, post, M.wood, px, y + h / 2, pz));
+    g.add(box(post * 1.42, 0.09, post * 1.42, M.woodDark, px, y + h + 0.045, pz));
+    for (let k = 1; k <= bars; k++) {
+      const t = (i + k / (bars + 1)) / n;
+      g.add(box(0.05, h * 0.66, 0.05, M.wood, ax + dx * t, y + h * 0.36, az + dz * t));
+    }
+  }
+  const rot = Math.atan2(-dz, dx);
+  const bar = (yy, hh, ww, mat) => {
+    const b = box(len, hh, ww, mat, ax + dx / 2, y + yy, az + dz / 2);
+    b.rotation.y = rot; g.add(b);
+  };
+  bar(h - 0.05, 0.10, 0.14, M.woodDark);   // 寻杖
+  bar(h * 0.58, 0.07, 0.09, M.wood);       // 盆唇
+  bar(0.09, 0.14, 0.16, M.wood);           // 地栿
+}
+
 function makeTower(side) {
   const t = new T.Group();
-  const X = side * 13.9, Z = -1.6;
+  const X = side * 28.1, Z = -1.6;   // 外缘仍与两侧配殿、廊庑成一条直线
   t.position.set(X, 0, Z);
 
-  t.add(box(9.0, 0.55, 9.0, M.stoneDark, 0, 0.28, 0));
-  t.add(box(9.2, 0.12, 9.2, M.stoneWhite, 0, 0.60, 0));
-  // 下层
-  t.add(box(6.6, 3.6, 6.6, M.wall, 0, 2.45, 0));
-  [-3.3, 3.3].forEach(x => [-3.3, 3.3].forEach(z => {
-    t.add(cyl(0.22, 0.24, 3.9, M.wood, 10, x, 2.6, z));
-    pushDougong(X + x, 4.35, Z + z, 0.8);
-  }));
-  [-1, 1].forEach(s => {
-    t.add(panel(2.2, 1.9, M.lattice, s * 1.9, 2.5, 3.33));
-    t.add(panel(2.2, 1.9, M.lattice, s * 1.9, 2.5, -3.33, Math.PI));
-  });
-  t.add(box(7.2, 0.30, 7.2, M.woodMid, 0, 4.25, 0));
-  t.add(makeRoof(9.8, 9.8, 4.48, 1.85, { corner: 0.78, ridgeHalf: 0, curve: 1.4, seg: 26, beasts: true }));
+  const F = 0.76;                    // 台基顶
+  const BW = 8.30;                   // 台身平面（白墙）
+  const WT = 5.94;                   // 台身墙顶
+  const PZ = 6.55;                   // 平坐楼面（与连廊楼面同高）
+  const SW = 7.40;                   // 亭身平面
+  const ST = 9.80;                   // 亭身额枋顶
+  const EY = 10.40;                  // 歇山檐口
 
-  // 平座栏杆
-  t.add(box(7.4, 0.22, 7.4, M.woodDark, 0, 5.35, 0));
-  [-1, 1].forEach(s => {
-    for (let k = -3; k <= 3; k++) {
-      t.add(box(0.11, 0.72, 0.11, M.woodMid, k * 1.05, 5.80, s * 3.55));
-      t.add(box(0.11, 0.72, 0.11, M.woodMid, s * 3.55, 5.80, k * 1.05));
-    }
-    t.add(box(7.3, 0.11, 0.14, M.woodMid, 0, 6.10, s * 3.55));
-    t.add(box(0.14, 0.11, 7.3, M.woodMid, s * 3.55, 6.10, 0));
-  });
-  // 上层
-  t.add(box(5.8, 2.5, 5.8, M.wall, 0, 7.42, 0));
-  [-1, 1].forEach(s => {
-    t.add(panel(1.9, 1.5, M.lattice, 0, 7.5, s * 2.93));
-    t.add(panel(1.9, 1.5, M.lattice, s * 2.93, 7.5, 0, Math.PI / 2));
-  });
-  [-2.75, 2.75].forEach(x => [-2.75, 2.75].forEach(z => {
-    t.add(cyl(0.19, 0.21, 2.5, M.wood, 10, x, 7.42, z));
-    pushDougong(X + x, 8.62, Z + z, 0.66);
+  /* 台基：三层石线脚 */
+  t.add(box(9.90, 0.34, 9.90, M.stoneDark, 0, 0.17, 0));
+  t.add(box(9.46, 0.38, 9.46, M.stoneWhite, 0, 0.53, 0));
+  t.add(box(9.06, 0.12, 9.06, M.stoneDark, 0, 0.70, 0));
+
+  /* 台身：四面白石抹灰墙 */
+  const BH = WT - F;
+  [-1, 1].forEach(sz =>
+    t.add(box(BW, BH, 0.44, M.wall, 0, F + BH / 2, sz * (BW / 2 - 0.22))));
+  [-1, 1].forEach(sx =>
+    t.add(box(0.44, BH, BW - 0.88, M.wall, sx * (BW / 2 - 0.22), F + BH / 2, 0)));
+  t.add(box(BW + 0.20, 0.16, BW + 0.20, M.stoneWhite, 0, WT - 0.08, 0));   // 上腰石线
+
+  /* 正面黑漆板门（朝院内） */
+  const DW = 2.30, DH = 3.30;
+  [-1, 1].forEach(sx =>
+    t.add(box(0.22, DH + 0.34, 0.16, M.stoneWhite, sx * (DW / 2 + 0.12), F + (DH + 0.34) / 2, BW / 2 + 0.02)));
+  t.add(box(DW + 0.70, 0.26, 0.18, M.stoneWhite, 0, F + DH + 0.33, BW / 2 + 0.02));
+  t.add(box(DW + 0.18, DH + 0.12, 0.10, M.woodDark, 0, F + DH / 2, BW / 2 + 0.03));
+  t.add(box(DW - 0.02, DH - 0.02, 0.07, M.ink, 0, F + DH / 2, BW / 2 + 0.09));
+  [-0.26, 0.26].forEach(dx =>
+    t.add(makeMesh(new T.SphereGeometry(0.055, 8, 6), M.gold, dx, F + 2.05, BW / 2 + 0.13)));
+  // 门前踏跺（台基高 0.76，三级）
+  for (let k = 0; k < 3; k++)
+    t.add(box(3.10, 0.19, 0.34, M.stone, 0, 0.57 - k * 0.19, BW / 2 + 0.97 + k * 0.34));
+
+  /* 台身上部一圈直棂窗（实景白墙上的窄窗带） */
+  [-1, 1].forEach(sz => [-1.55, 1.55].forEach(dx => {
+    t.add(box(1.72, 1.12, 0.09, M.woodDark, dx, WT - 1.42, sz * (BW / 2 + 0.01)));
+    t.add(panel(1.56, 0.96, M.lattice, dx, WT - 1.42, sz * (BW / 2 + 0.07)));
   }));
-  t.add(box(6.4, 0.26, 6.4, M.woodMid, 0, 8.62, 0));
-  t.add(makeRoof(8.6, 8.6, 8.80, 2.30, { corner: 0.72, ridgeHalf: 0, curve: 1.4, seg: 26, finial: true }));
+  [-1, 1].forEach(sx => [-1.55, 1.55].forEach(dz => {
+    const f = box(1.72, 1.12, 0.09, M.woodDark, sx * (BW / 2 + 0.01), WT - 1.42, dz);
+    f.rotation.y = Math.PI / 2; t.add(f);
+    t.add(panel(1.56, 0.96, M.lattice, sx * (BW / 2 + 0.07), WT - 1.42, dz, Math.PI / 2));
+  }));
+
+  /* 斗拱两跳出挑，承平坐 */
+  for (let i = 0; i < 5; i++) {
+    const o = -3.30 + i * 1.65;
+    pushDougong(X + o, WT - 0.50, Z + BW / 2 + 0.24, 0.80);
+    pushDougong(X + o, WT - 0.50, Z - BW / 2 - 0.24, 0.80);
+    pushDougong(X + BW / 2 + 0.24, WT - 0.50, Z + o, 0.80);
+    pushDougong(X - BW / 2 - 0.24, WT - 0.50, Z + o, 0.80);
+  }
+  t.add(box(BW + 0.56, 0.24, BW + 0.56, M.woodMid, 0, WT - 0.10, 0));       // 普拍枋
+  t.add(box(BW + 1.68, 0.26, BW + 1.68, M.wood, 0, PZ - 0.13, 0));          // 平坐楼板
+  t.add(box(BW + 1.84, 0.12, BW + 1.84, M.woodDark, 0, PZ - 0.32, 0));      // 楼板压边
+
+  /* 平坐栏杆：靠主殿一侧留出连廊接口，其余三面通长 */
+  const R = 5.06;
+  const inner = -side;                 // 朝主殿方向（局部坐标）
+  const sIn = inner * R, sOut = -inner * R;
+  railLine(t, sIn, -R, sOut, -R, PZ);                          // 后檐
+  railLine(t, sIn, R, sOut, R, PZ);                            // 前檐
+  railLine(t, sOut, -R, sOut, R, PZ);                          // 外侧
+  railLine(t, sIn, 2.42, sIn, R - 0.14, PZ);                    // 内侧：连廊接口两侧
+  railLine(t, sIn, -R, sIn, -2.42, PZ);
+
+  /* 亭身：四面同一做法，按 90° 旋转复制 */
+  const y0 = PZ;
+  const mkFace = () => {
+    const f = new T.Group();
+    const zf = SW / 2;
+    f.add(box(SW, 0.78, 0.30, M.wall, 0, y0 + 0.39, zf - 0.16));              // 坎墙
+    f.add(box(SW + 0.10, 0.14, 0.46, M.woodMid, 0, y0 + 0.85, zf - 0.15));     // 槛框
+    [-1, 0, 1].forEach(i => {                                                   // 隔扇三间
+      const bx = i * 2.36;
+      f.add(box(2.14, 1.56, 0.12, M.wood, bx, y0 + 1.66, zf - 0.14));
+      f.add(panel(1.96, 1.40, M.lattice, bx, y0 + 1.66, zf - 0.07));
+      f.add(box(2.10, 0.09, 0.16, M.woodDark, bx, y0 + 2.40, zf - 0.12));
+      f.add(box(2.10, 0.09, 0.16, M.woodDark, bx, y0 + 0.93, zf - 0.12));
+    });
+    // 横披窗：连续小格 + 竖棂
+    f.add(box(SW + 0.04, 0.50, 0.14, M.woodDark, 0, y0 + 2.72, zf - 0.14));
+    f.add(panel(SW - 0.14, 0.40, M.lattice, 0, y0 + 2.72, zf - 0.07));
+    for (let k = -4; k <= 4; k++)
+      f.add(box(0.06, 0.44, 0.08, M.wood, k * 0.82, y0 + 2.72, zf - 0.05));
+    // 额枋
+    f.add(box(SW + 0.30, 0.26, 0.44, M.woodMid, 0, y0 + 3.00, zf - 0.16));
+    return f;
+  };
+  [0, Math.PI / 2, Math.PI, -Math.PI / 2].forEach(rot => {
+    const f = mkFace();
+    f.rotation.y = rot;
+    t.add(f);
+  });
+  // 四角柱 + 每面中柱
+  [-1, 1].forEach(sx => [-1, 1].forEach(sz =>
+    t.add(cyl(0.22, 0.24, 3.24, M.wood, 10, sx * (SW / 2 - 0.02), y0 + 1.62, sz * (SW / 2 - 0.02)))));
+  [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([sx, sz]) =>
+    t.add(cyl(0.15, 0.17, 3.24, M.wood, 8, sx * (SW / 2 - 0.02), y0 + 1.62, sz * (SW / 2 - 0.02))));
+
+  /* 檐下斗拱一圈 */
+  for (let i = 0; i < 4; i++) {
+    const o = -2.55 + i * 1.70;
+    pushDougong(X + o, ST - 0.20, Z + SW / 2 + 0.22, 0.74);
+    pushDougong(X + o, ST - 0.20, Z - SW / 2 - 0.22, 0.74);
+    pushDougong(X + SW / 2 + 0.22, ST - 0.20, Z + o, 0.74);
+    pushDougong(X - SW / 2 - 0.22, ST - 0.20, Z + o, 0.74);
+  }
+
+  /* 单檐歇山 + 正中宝顶（短正脊） */
+  t.add(makeRoof(11.10, 11.10, EY, 2.92,
+    { ridgeHalf: 0.30, corner: 0.54, curve: 1.58, seg: 32, finial: true, beasts: true }));
+
   return t;
 }
 modelRoot.add(makeTower(-1));
@@ -634,28 +897,44 @@ modelRoot.add(makeTower(1));
 /* ---------- 10. 连接廊 + 两侧长廊庑 ---------- */
 function makeCorridor(side) {
   const c = new T.Group();
-  const X = side * 17.6, Z0 = -4, LEN = 18, Zc = Z0 + LEN / 2;
+  const CW = 5.2;                                  // 廊宽
+  const CH = 7.40;                                 // 柱高（约主殿一层）
+  const CE = 8.05;                                 // 檐口
+  const LEN = 19.0;
+  const X = side * 31.2, Zc = 3.4 + LEN / 2;       // 外移到钟楼同列：外缘 33.8，北端接钟楼台基南沿
   c.position.set(X, 0, Zc);
-  c.add(box(4.6, 0.42, LEN, M.stoneDark, 0, 0.21, 0));
-  c.add(box(4.8, 0.10, LEN + 0.2, M.stoneWhite, 0, 0.46, 0));
+  const CY = 0.60;                                 // 廊内地面
 
-  // 柱列（朝院内一侧开敞）
+  c.add(box(CW + 0.6, 0.50, LEN, M.stoneDark, 0, 0.25, 0));
+  c.add(box(CW + 0.8, 0.10, LEN + 0.2, M.stoneWhite, 0, 0.55, 0));
+
+  // 前后两列柱（朝院内一侧开敞）
   for (let k = 0; k <= 8; k++) {
     const z = -LEN / 2 + k * (LEN / 8);
-    c.add(cyl(0.17, 0.19, 3.25, M.wood, 10, -side * 1.95, 2.10, z));
-    c.add(cyl(0.17, 0.19, 3.25, M.wood, 10, side * 1.95, 2.10, z));
-    c.add(cyl(0.23, 0.23, 0.12, M.stoneDark, 10, -side * 1.95, 0.54, z));
+    c.add(cyl(0.19, 0.21, CH, M.wood, 10, -side * (CW / 2 - 0.38), CY + CH / 2, z));
+    c.add(cyl(0.19, 0.21, CH, M.wood, 10, side * (CW / 2 - 0.38), CY + CH / 2, z));
+    c.add(cyl(0.26, 0.26, 0.14, M.stoneDark, 10, -side * (CW / 2 - 0.38), CY + 0.07, z));
   }
-  c.add(box(0.26, 0.30, LEN, M.woodMid, -side * 1.95, 3.62, 0));
-  c.add(box(0.26, 0.30, LEN, M.woodMid, side * 1.95, 3.62, 0));
-  // 外侧白墙 + 格栅窗
-  c.add(box(0.24, 1.35, LEN, M.wall, side * 2.05, 1.15, 0));
+  c.add(box(0.28, 0.34, LEN, M.woodMid, -side * (CW / 2 - 0.38), CY + CH - 0.10, 0));
+  c.add(box(0.28, 0.34, LEN, M.woodMid, side * (CW / 2 - 0.38), CY + CH - 0.10, 0));
+
+  // 外侧白墙（依托配殿墙体）+ 连续格窗
+  c.add(box(0.26, CH, LEN, M.wall, side * (CW / 2 - 0.06), CY + CH / 2, 0));
   for (let k = 0; k <= 7; k++) {
-    const z = -LEN / 2 + 1.2 + k * ((LEN - 2.4) / 7);
-    c.add(panel(1.9, 1.45, M.lattice, side * 1.94, 2.65, z, Math.PI / 2));
+    const z = -LEN / 2 + 1.3 + k * ((LEN - 2.6) / 7);
+    c.add(box(2.05, 2.60, 0.10, M.woodDark, side * (CW / 2 - 0.17), CY + 4.05, z));
+    c.add(panel(1.88, 2.44, M.lattice, side * (CW / 2 - 0.23), CY + 4.05, z, Math.PI / 2));
   }
-  // 屋顶：长正脊两坡（旋转 90°）
-  const r = makeRoof(LEN + 0.8, 5.2, 3.78, 1.15, { corner: 0.26, ridgeHalf: (LEN + 0.8 - 5.2) / 2 - 0.3, curve: 1.45, seg: 26, beasts: false });
+  // 檐下斗拱（朝院内一排）
+  for (let k = 0; k <= 8; k++) {
+    const z = -LEN / 2 + k * (LEN / 8);
+    pushDougong(X - side * (CW / 2 - 0.38), CE - 0.98, Zc + z, 0.70);
+  }
+  // 南端山墙收头：廊庑屋顶前端不再悬空
+  c.add(box(CW - 0.2, CH + 0.9, 0.30, M.wall, 0, CY + (CH + 0.9) / 2 - 0.4, LEN / 2 - 0.15));
+  // 屋顶：长正脊两坡，端部起翘（与主殿飞檐同风格）
+  const r = makeRoof(LEN + 1.0, CW + 0.55, CE, 1.32,
+    { corner: 0.34, ridgeHalf: (LEN + 1.0 - CW - 0.55) / 2 - 0.4, curve: 1.42, seg: 30, beasts: false });
   r.rotation.y = Math.PI / 2;
   c.add(r);
   return c;
@@ -663,29 +942,102 @@ function makeCorridor(side) {
 modelRoot.add(makeCorridor(-1));
 modelRoot.add(makeCorridor(1));
 
-// 主殿与钟鼓楼之间的连廊
-[-1, 1].forEach(s => {
-  const link = new T.Group();
-  link.position.set(s * 11.4, 0, -1.6);
-  link.add(box(2.6, 3.0, 4.2, M.wall, 0, 2.4, 0));
-  link.add(panel(1.7, 1.7, M.lattice, 0, 2.5, 2.13));
-  link.add(box(0.2, 0.28, 4.4, M.woodMid, 0, 3.9, 0));
-  const r = makeRoof(4.8, 3.2, 4.05, 0.95, { corner: 0.38, ridgeHalf: 0.7, seg: 20, beasts: false });
-  r.rotation.y = Math.PI / 2;
-  link.add(r);
-  modelRoot.add(link);
-});
+/* ---------- 10. 钟鼓楼 ↔ 主殿的连廊（上层开敞，下层门洞） ---------- */
+/* 实景：主殿两侧各接一段二层廊——下层是白石墙体，正中开方形门洞（由前院穿至后院）；
+ * 上层挑出木构开敞廊，两侧设木栏杆，上覆长条歇山瓦顶，两端分别衔接平坐与主殿侧檐。 */
+function makeSideGallery(side) {
+  const g = new T.Group();
+  const CX = side * 16.60;           // 连廊中心（x）
+  const GZ = -1.60;                  // 与钟楼同轴
+  const LEN0 = 13.40;                // 下层墙身长度（西接主殿侧墙，东抵钟楼台基）
+  const LEN = 10.90;                 // 上层廊身长度（东端收在钟楼下檐之内）
+  const GD = 4.80;                   // 进深
+  const F = 0.62;                    // 台基顶
+  const WT = 6.22;                   // 下层墙顶
+  const FL = 6.55;                   // 上层楼面（与平坐同高）
+  const EY = 9.30;                   // 檐口（低于钟楼下檐）
+  g.position.set(CX, 0, GZ);
 
-// 左侧绿色雨棚 / 入口牌 / 标识
-{
-  const shed = new T.Group();
-  shed.position.set(-15.6, 0, 6.4);
-  shed.add(box(3.4, 0.10, 2.4, M.greenShed, 0, 3.0, 0));
-  shed.add(box(3.4, 0.16, 0.12, M.greenShed, 0, 3.05, 1.18));
-  [-1.5, 1.5].forEach(x => shed.add(cyl(0.05, 0.05, 2.3, M.woodDark, 8, x, 1.85, 1.0)));
-  modelRoot.add(shed);
-  modelRoot.add(box(0.9, 1.3, 0.12, std(0x9c352c, 0.85), -13.2, 0.9, 9.2));
+  /* 台基 */
+  g.add(box(LEN0 + 0.80, 0.30, GD + 1.00, M.stoneDark, 0, 0.15, 0));
+  g.add(box(LEN0 + 1.05, 0.34, GD + 1.25, M.stoneWhite, 0, 0.47, 0));
+
+  /* 下层墙身：前后墙开方形门洞，两侧山墙封闭 */
+  const DW = 2.55, DH = 3.60;
+  const wallShape = () => {
+    const sh = new T.Shape();
+    sh.moveTo(-LEN0 / 2, 0); sh.lineTo(LEN0 / 2, 0);
+    sh.lineTo(LEN0 / 2, WT - F); sh.lineTo(-LEN0 / 2, WT - F); sh.lineTo(-LEN0 / 2, 0);
+    const h = new T.Path();
+    h.moveTo(-DW / 2, 0); h.lineTo(-DW / 2, DH);
+    h.lineTo(DW / 2, DH); h.lineTo(DW / 2, 0); h.closePath();
+    sh.holes.push(h);
+    return sh;
+  };
+  [-1, 1].forEach(sz => {
+    const zf = sz * GD / 2 - (sz > 0 ? 0.46 : 0);
+    g.add(makeMesh(new T.ExtrudeGeometry(wallShape(), { depth: 0.46, bevelEnabled: false }),
+      M.wall, 0, F, zf));
+  });
+  [-1, 1].forEach(sx =>
+    g.add(box(0.46, WT - F, GD, M.wall, sx * (LEN0 / 2 - 0.23), F + (WT - F) / 2, 0)));
+  g.add(box(LEN0 + 0.20, 0.16, GD + 0.20, M.stoneWhite, 0, WT - 0.08, 0));   // 上腰石线
+
+  /* 门洞内部：石地面 + 暗色壁身，读得出是穿透的门洞而非贴面 */
+  g.add(box(DW + 0.30, 0.10, GD + 0.20, M.stoneWhite, 0, F + 0.05, 0));
+  [-1, 1].forEach(sx =>
+    g.add(box(0.10, DH, GD - 0.94, M.ink, sx * (DW / 2 + 0.04), F + DH / 2, 0)));
+  g.add(box(DW + 0.26, 0.10, GD - 0.94, M.ink, 0, F + DH - 0.05, 0));
+
+  /* 门框：石劵边（前后两面） + 门额 */
+  [-1, 1].forEach(sz => {
+    const zf = sz * (GD / 2 + 0.02);
+    [-1, 1].forEach(sx =>
+      g.add(box(0.22, DH + 0.30, 0.20, M.stoneWhite, sx * (DW / 2 + 0.11), F + (DH + 0.30) / 2, zf)));
+    g.add(box(DW + 0.68, 0.26, 0.22, M.stoneWhite, 0, F + DH + 0.32, zf));
+  });
+  // 门前三级踏跺
+  for (let k = 0; k < 3; k++)
+    g.add(box(DW + 1.30, 0.20, 0.40, M.stone, 0, 0.52 - k * 0.20, GD / 2 + 0.80 + k * 0.40));
+
+  /* 楼板：斗拱出挑承托 */
+  for (let i = 0; i < 6; i++) {
+    const o = -LEN0 / 2 + 1.00 + i * ((LEN0 - 2.00) / 5);
+    pushDougong(CX + o, WT - 0.56, GZ + GD / 2 + 0.22, 0.60);
+    pushDougong(CX + o, WT - 0.56, GZ - GD / 2 - 0.22, 0.60);
+  }
+  g.add(box(LEN0 + 0.36, 0.16, GD + 0.36, M.woodMid, 0, WT + 0.08, 0));      // 普拍枋
+  g.add(box(LEN + 2.30, 0.26, GD + 0.50, M.wood, 0, FL - 0.13, 0));          // 楼板（东端搭上平坐）
+  g.add(box(LEN + 2.50, 0.10, GD + 0.66, M.woodDark, 0, FL - 0.31, 0));      // 楼板压边
+
+  /* 上层：两列廊柱 + 额枋 + 横梁 */
+  const nBay = 5, step = LEN / nBay, edgeZ = GD / 2 - 0.40;
+  for (let i = 0; i <= nBay; i++) {
+    const px = -LEN / 2 + i * step;
+    [-1, 1].forEach(sz => {
+      g.add(cyl(0.17, 0.19, 2.52, M.wood, 10, px, FL + 1.26, sz * edgeZ));
+      g.add(box(0.18, 0.10, 0.18, M.woodDark, px, FL + 0.06, sz * edgeZ));
+    });
+    g.add(box(0.18, 0.24, GD - 0.72, M.woodMid, px, EY - 0.46, 0));          // 横梁
+  }
+  [-1, 1].forEach(sz => {
+    g.add(box(LEN + 0.44, 0.26, 0.26, M.woodMid, 0, EY - 0.30, sz * edgeZ));   // 檐额
+    g.add(box(LEN + 0.34, 0.12, 0.16, M.woodDark, 0, EY - 0.52, sz * edgeZ));  // 挂落
+    railLine(g, -LEN / 2 + 0.24, sz * edgeZ, LEN / 2 - 0.24, sz * edgeZ, FL + 0.02, { h: 1.02 });
+  });
+
+  /* 靠主殿一端封山墙（避免廊身悬空断头） */
+  g.add(box(0.30, EY - FL + 0.10, GD + 0.30, M.wall, -side * (LEN / 2 - 0.16), FL + (EY - FL) / 2 - 0.05, 0));
+
+  /* 长条歇山瓦顶（正脊沿 x，两端收山） */
+  const rf = makeRoof(LEN + 1.90, GD + 1.90, EY, 0.92,
+    { ridgeHalf: (LEN + 1.90 - (GD + 1.90)) / 2, corner: 0.30, curve: 1.35, seg: 30, beasts: false });
+  g.add(rf);
+
+  return g;
 }
+modelRoot.add(makeSideGallery(-1));
+modelRoot.add(makeSideGallery(1));
 
 /* ---------- 11. 斗拱统一实例化 ---------- */
 {
@@ -715,8 +1067,8 @@ function makeLion(ballSide) {
     back.scale.set(1, 0.9, 1.1); g.add(back);
   });
   // 头
-  const head = makeMesh(new T.SphereGeometry(0.46, 14, 12), S, 0, 2.18, 0.36);
-  head.scale.set(1.02, 1.0, 0.94); g.add(head);
+  const head = makeMesh(new T.SphereGeometry(0.42, 14, 12), S, 0, 2.16, 0.34);
+  head.scale.set(1.04, 0.98, 0.96); g.add(head);
   // 卷毛（螺髻）
   for (let i = 0; i < 20; i++) {
     const a = (i / 20) * Math.PI * 2;
@@ -730,9 +1082,9 @@ function makeLion(ballSide) {
   }
   // 五官
   g.add(box(0.62, 0.34, 0.28, S, 0, 1.98, 0.72));                       // 吻部
-  [-0.20, 0.20].forEach(x => g.add(makeMesh(new T.SphereGeometry(0.075, 8, 6), M.ink, x, 2.30, 0.76)));
-  g.add(makeMesh(new T.SphereGeometry(0.09, 8, 6), M.ink, 0, 2.06, 0.88));
-  g.add(box(0.34, 0.06, 0.06, M.ink, 0, 1.90, 0.86));
+  [-0.19, 0.19].forEach(x => g.add(makeMesh(new T.SphereGeometry(0.042, 8, 6), M.ink, x, 2.32, 0.79)));
+  g.add(makeMesh(new T.SphereGeometry(0.055, 8, 6), M.ink, 0, 2.08, 0.90));
+  g.add(box(0.26, 0.04, 0.05, M.ink, 0, 1.93, 0.89));
   [-0.30, 0.30].forEach(x => { const e = makeMesh(new T.ConeGeometry(0.13, 0.24, 5), S, x, 2.58, 0.18); g.add(e); });
   // 绣球（一侧踩球）
   if (ballSide) {
@@ -746,33 +1098,37 @@ function makeLion(ballSide) {
   }
   return g;
 }
-const lionL = makeLion(true); lionL.position.set(-4.55, 0, 7.55); lionL.scale.setScalar(1.22);
-const lionR = makeLion(false); lionR.position.set(4.55, 0, 7.55); lionR.scale.set(-1.22, 1.22, 1.22);
+const lionL = makeLion(true); lionL.position.set(-6.05, 0, 11.65); lionL.scale.setScalar(1.40);
+const lionR = makeLion(false); lionR.position.set(6.05, 0, 11.65); lionR.scale.set(-1.40, 1.40, 1.40);
 modelRoot.add(lionL, lionR);
 
 /* ---------- 13. 石经幢 ---------- */
 function makeChuang() {
   const g = new T.Group();
   const S = M.stoneWhite, D = M.stone;
-  g.add(box(1.30, 0.26, 1.30, D, 0, 0.13, 0));
-  g.add(cyl(0.52, 0.62, 0.28, S, 8, 0, 0.40, 0));
-  g.add(cyl(0.40, 0.46, 0.24, D, 8, 0, 0.66, 0));
-  let y = 0.80;
-  for (let layer = 0; layer < 4; layer++) {
-    const h = 0.95 - layer * 0.10;
-    g.add(cyl(0.27, 0.31, h, S, 8, 0, y + h / 2, 0));        // 幢身（八角）
-    g.add(cyl(0.34, 0.34, 0.07, D, 8, 0, y + 0.10, 0));
-    g.add(cyl(0.34, 0.34, 0.07, D, 8, 0, y + h - 0.10, 0));
+  // 须弥座（照片中经幢基座宽厚）
+  g.add(box(1.95, 0.32, 1.95, D, 0, 0.16, 0));
+  g.add(box(1.72, 0.24, 1.72, S, 0, 0.44, 0));
+  g.add(cyl(0.74, 0.86, 0.34, S, 8, 0, 0.73, 0));
+  g.add(cyl(0.58, 0.66, 0.26, D, 8, 0, 1.03, 0));
+  let y = 1.20;
+  for (let layer = 0; layer < 6; layer++) {
+    const h = 0.86 - layer * 0.045;
+    const r = 0.31 - layer * 0.014;
+    g.add(cyl(r, r + 0.03, h, S, 8, 0, y + h / 2, 0));          // 幢身（八角）
+    g.add(cyl(r + 0.04, r + 0.04, 0.05, D, 8, 0, y + 0.09, 0));
+    g.add(cyl(r + 0.04, r + 0.04, 0.05, D, 8, 0, y + h - 0.09, 0));
     y += h;
-    g.add(cyl(0.20, 0.50, 0.20, D, 8, 0, y + 0.10, 0));      // 出檐
+    g.add(cyl(r + 0.06, r + 0.30, 0.20, D, 8, 0, y + 0.10, 0));  // 宝盖出檐
     y += 0.22;
   }
-  g.add(makeMesh(new T.SphereGeometry(0.22, 10, 8), S, 0, y + 0.14, 0));
-  g.add(makeMesh(new T.ConeGeometry(0.13, 0.34, 8), S, 0, y + 0.40, 0));
+  g.add(makeMesh(new T.SphereGeometry(0.26, 10, 8), S, 0, y + 0.16, 0));
+  g.add(cyl(0.10, 0.10, 0.30, S, 8, 0, y + 0.46, 0));
+  g.add(makeMesh(new T.ConeGeometry(0.16, 0.42, 8), S, 0, y + 0.78, 0));
   return g;
 }
 [-1, 1].forEach(s => {
-  const c = makeChuang(); c.position.set(s * 8.15, 0, 6.0); modelRoot.add(c);
+  const c = makeChuang(); c.position.set(s * 8.40, 0, 8.70); modelRoot.add(c);
 });
 
 /* ---------- 14. 盆景松 ---------- */
@@ -804,7 +1160,7 @@ function makeCedar(x, z, height, scale) {
   const crownBase = height * 0.22, crownH = height * 0.74;
 
   // 连续塔形树冠内核（顶点扰动，避免规则圆锥感）
-  const coreGeo = new T.CylinderGeometry(0.18, 1.00 * scale, crownH, 9, 12);
+  const coreGeo = new T.CylinderGeometry(0.14, 1.08 * scale, crownH, 10, 14);
   const pa = coreGeo.attributes.position;
   for (let i = 0; i < pa.count; i++) {
     const n = (rnd() - 0.5) * 0.34;
@@ -815,15 +1171,15 @@ function makeCedar(x, z, height, scale) {
   coreGeo.computeVertexNormals();
   g.add(makeMesh(coreGeo, std(0x315136, 1), 0, crownBase + crownH / 2, 0));
 
-  // 表面枝叶团簇：高度随机（非逐层堆叠），贴着锥面分布
+  // 表面枝叶团簇：小而密，贴着锥面分布（柏树的细碎针叶感）
   const clusters = [];
-  for (let i = 0; i < 420; i++) {
-    const t = rnd();
+  for (let i = 0; i < 980; i++) {
+    const t = Math.pow(rnd(), 0.92);
     const yy = crownBase + crownH * t;
-    const taper = (1 - t) * 0.98 * scale + 0.14;
+    const taper = (1 - t) * 1.02 * scale + 0.12;
     const a = rnd() * Math.PI * 2;
-    const r = taper * (0.60 + 0.50 * rnd());
-    const s = (0.13 + rnd() * 0.19) * scale;
+    const r = taper * (0.52 + 0.52 * rnd());
+    const s = (0.085 + rnd() * 0.115) * scale;
     clusters.push([Math.cos(a) * r, yy, Math.sin(a) * r, s]);
   }
   const im = new T.InstancedMesh(leafGeo, std(0xffffff, 1), clusters.length);
@@ -841,8 +1197,8 @@ function makeCedar(x, z, height, scale) {
   g.add(im);
   return g;
 }
-natureRoot.add(makeCedar(-2.75, 6.6, 15.0, 0.86));
-natureRoot.add(makeCedar(2.80, 6.3, 15.6, 0.90));
+natureRoot.add(makeCedar(-4.85, 10.55, 15.4, 0.84));
+natureRoot.add(makeCedar(4.90, 10.20, 16.2, 0.88));
 
 // 照片背景以天空与远山为主，此处不添加远景球体，保持天际线干净
 
@@ -852,12 +1208,13 @@ const hotspots = [
   { n: '飞檐翘角（起翘）',        p: new T.Vector3(-10.2, 8.0, 4.1) },
   { n: '斗拱层',                  p: new T.Vector3(-6.6, 6.5, 3.2) },
   { n: '三券门 · 格栅门扇',       p: new T.Vector3(0, 3.2, -0.9) },
-  { n: '「萬年正續」横匾',        p: new T.Vector3(0, 5.75, 3.3) },
-  { n: '石狮 · 须弥座',           p: new T.Vector3(4.55, 2.5, 7.55) },
-  { n: '石经幢',                  p: new T.Vector3(-8.15, 3.4, 6.0) },
-  { n: '钟楼 / 鼓楼（攒尖宝顶）',  p: new T.Vector3(-13.9, 11.2, -1.6) },
-  { n: '廊庑',                    p: new T.Vector3(17.6, 4.2, 6) },
-  { n: '古杉',                    p: new T.Vector3(2.80, 10.8, 6.3) },
+  { n: '“万年正续”横匾',        p: new T.Vector3(0, 5.75, 3.3) },
+  { n: '石狮 · 须弥座',           p: new T.Vector3(6.05, 2.6, 11.65) },
+  { n: '石经幢',                  p: new T.Vector3(-8.40, 5.2, 8.70) },
+  { n: '钟楼 / 鼓楼（平坐重楼 · 宝顶）', p: new T.Vector3(-28.1, 12.9, -1.6) },
+  { n: '连廊 · 下层门洞',            p: new T.Vector3(-16.6, 2.6, 0.9) },
+  { n: '廊庑 · 钟楼同列',          p: new T.Vector3(31.2, 7.6, 12) },
+  { n: '古杉',                    p: new T.Vector3(4.90, 11.0, 10.2) },
   { n: '石板御道',                p: new T.Vector3(0, 0.1, 22) },
 ];
 const labelLayer = document.getElementById('labels');
@@ -975,11 +1332,47 @@ document.getElementById('btn-export').addEventListener('click', async (e) => {
   setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 2200);
 });
 
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+/* 视口同步：合并到一帧内执行，且 1px 以内的变化直接忽略。
+ * 手机上地址栏伸缩 / 软键盘 / 容器 0.5px 抖动会连发 resize 事件，
+ * 每来一次就 setSize 会把 drawing buffer 反复重建，屏幕整片刷白 —— 这就是"频闪"。
+ * 现在只有真正改变 ≥1px 才重建，且同一帧多次 resize 只算一次。 */
+const _sizeTmp = new T.Vector2();
+function syncViewport() {
+  const { w, h } = viewportSize();
+  const pr = Math.min(window.devicePixelRatio || 1, dprCap);
+  const cur = renderer.getSize(_sizeTmp);
+  const same = Math.abs(cur.x - w) < 1 && Math.abs(cur.y - h) < 1;
+  if (same && renderer.getPixelRatio() === pr) return;
+  if (renderer.getPixelRatio() !== pr) renderer.setPixelRatio(pr);
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+}
+window.__SYNC_SIZE__ = syncViewport;   // 上下文恢复后由运行时复用同一套尺寸逻辑
+let _sizeRaf = 0;
+let _sizeTimer = 0;
+/* 分两档处理：
+ *   宽度变了（横竖屏旋转、桌面改窗）→ 立即重建，否则画面比例会错一帧；
+ *   只有高度在变（手机地址栏伸缩动画）→ 等 160ms 稳定后再重建一次。
+ * 地址栏动画期间 canvas 的 CSS 尺寸仍由 100% 跟随，画面只是被轻微纵向拉伸，
+ * 比"每帧重建缓冲、整屏刷白"好得多。 */
+const queueViewport = () => {
+  if (_sizeRaf) return;
+  _sizeRaf = requestAnimationFrame(() => {
+    _sizeRaf = 0;
+    const { w } = viewportSize();
+    const cur = renderer.getSize(_sizeTmp);
+    if (Math.abs(cur.x - w) > 4) {
+      window.clearTimeout(_sizeTimer); _sizeTimer = 0;
+      syncViewport();
+      return;
+    }
+    window.clearTimeout(_sizeTimer);
+    _sizeTimer = window.setTimeout(() => { _sizeTimer = 0; syncViewport(); }, 160);
+  });
+};
+window.addEventListener('resize', queueViewport);
+window.addEventListener('orientationchange', queueViewport);
 controls.addEventListener('start', () => { tween = null; document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active')); });
 
 /* ---------- 18. 渲染循环 ---------- */

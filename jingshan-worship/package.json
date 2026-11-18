@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "徑山萬壽禪寺 · 第三人稱漫游與跪拜交互（Vue 3 + TypeScript + Three.js）",
+  "description": "径山万寿禅寺 · 第三人称漫游与跪拜交互（Vue 3 + TypeScript + Three.js）",
   "scripts": {
     "sync:temple": "node scripts/sync-temple.mjs",
     "dev": "npm run sync:temple && vite",

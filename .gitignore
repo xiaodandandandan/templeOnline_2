@@ -22,6 +22,8 @@ jingshan-worship-source.zip
 
 # 截图与预览图：均为过程产物，不入库（本地保留，需要时重跑截图脚本生成）
 *.png
+# 例外：WebGL 降级用的全寺俯瞰兜底图必须入库，否则移动端/无 GPU 环境降级后空白
+!jingshan-temple/preview_top.png
 
 # 大型二进制模型：用 node _tools/render.mjs 从场景重新导出
 *.glb

@@ -31,7 +31,7 @@ export interface AvatarState {
 }
 
 /** 屏幕归一化锚点：[0,1] 区间，宿主据此在 iframe 之上叠加殿名（纯标注）。
- *  guide=true 为航拍图标注点（請香處 / 祖堂 / 藥師殿 等），名称由 3D 侧直接下发；
+ *  guide=true 为航拍图标注点（请香处 / 祖堂 / 药师殿 等），名称由 3D 侧直接下发；
  *  其余为 HALLS 中的殿宇，宿主按 id 查表取名。 */
 export interface HallAnchor {
   id: string
@@ -45,7 +45,8 @@ export interface HallAnchor {
 
 export type TempleCommand =
   | { cmd: 'setMode'; mode: SceneMode }
-  | { cmd: 'setMove'; forward: number; turn: number; run?: boolean }
+  /** strafe 为虚拟摇杆的横向分量（右正）；与 forward 一起构成镜头相对的屏幕向量 */
+  | { cmd: 'setMove'; forward: number; turn: number; strafe?: number; run?: boolean }
   | { cmd: 'wheel'; delta: number }
   | { cmd: 'setZoom'; distance: number | 'overview' | 'close' }
   | { cmd: 'teleport'; hallId: HallId }
@@ -79,6 +80,8 @@ export type TempleEvent =
   | { evt: 'hallFocused'; hallId: HallId }
   | { evt: 'stats'; stats: SceneStats }
   | { evt: 'error'; message: string }
+  /** WebGL 上下文状态：手机切后台/内存回收会丢失，恢复后回到 3D */
+  | { evt: 'webgl'; state: 'lost' | 'restored' }
 
 export interface BridgeEnvelope<T> {
   __channel: typeof BRIDGE_CHANNEL

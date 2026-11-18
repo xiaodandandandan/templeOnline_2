@@ -57,7 +57,7 @@ console.log('LAYOUT', JSON.stringify(layout))
 console.log('RUNTIME', JSON.stringify(runtime))
 await page.screenshot({ path: path.join(OUT, 'app-avatar.png') })
 
-// 按住「前进」1.6 秒 → 人物应沿中轴向天王殿移动
+// 按住“前进”1.6 秒 → 人物应沿中轴向天王殿移动
 const up = await page.$('.key.up')
 const box = await up.boundingBox()
 await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
@@ -89,7 +89,7 @@ if (bowBtn) {
     marks: document.querySelectorAll('.hall-mark').length,
   }))
   console.log('INTERACT', JSON.stringify({
-    toast: debug.toasts.find((t) => t.includes('已於')) || '',
+    toast: debug.toasts.find((t) => t.includes('已于')) || '',
     hasInteraction: debug.hasInteraction,
     marks: debug.marks,
   }))

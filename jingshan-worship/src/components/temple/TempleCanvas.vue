@@ -9,10 +9,27 @@ import AvatarHud from './AvatarHud.vue'
 
 const store = useTempleStore()
 const frame = ref<HTMLIFrameElement | null>(null)
+const stageEl = ref<HTMLElement | null>(null)
 const webglOk = ref(true)
 const { timedOut } = useTempleScene(frame)
 
+/**
+ * 单文件分发模式：打包脚本把 3D 场景 HTML / 兜底图以字符串注入到 window。
+ * 存在时用 srcdoc 内联场景，使 file:// 直接打开也能跑完整宿主（无需服务器）。
+ * 正常 dev / 部署下这两个全局变量不存在，走原本的 /temple/index.html URL。
+ */
+const inlineScene =
+  typeof window !== 'undefined'
+    ? (window as Window & { __TEMPLE_SCENE_HTML__?: string }).__TEMPLE_SCENE_HTML__ || ''
+    : ''
+const inlineFallback =
+  typeof window !== 'undefined'
+    ? (window as Window & { __TEMPLE_FALLBACK_DATAURL__?: string }).__TEMPLE_FALLBACK_DATAURL__ || ''
+    : ''
+const fallbackUrl = inlineFallback || '/temple/fallback.png'
+
 const runtimeUrl = computed(() => {
+  if (inlineScene) return '' // 内联场景用 srcdoc，不需要 URL
   const url = new URL(appConfig.templeRuntime, window.location.origin)
   url.searchParams.set('embed', '1')
   url.searchParams.set('mode', 'thirdPerson')
@@ -21,7 +38,7 @@ const runtimeUrl = computed(() => {
 
 /**
  * 贴近时所有殿宇投影会叠在中轴同一点，只标注当前所处殿宇；
- * 滚轮拉远进入「全寺俯瞰」后显示全部中轴殿名 + 航拍图标注的导览点。
+ * 滚轮拉远进入“全寺俯瞰”后显示全部中轴殿名 + 航拍图标注的导览点。
  */
 const marks = computed(() => {
   const ids = new Set<string>(AXIS_HALLS.map((h) => h.id))
@@ -40,7 +57,10 @@ const marks = computed(() => {
     }))
 })
 
-const degraded = computed(() => !webglOk.value || timedOut.value)
+/** 是否彻底不可用（无 WebGL / 超时）——此时 iframe 可卸载 */
+const fatal = computed(() => !webglOk.value || timedOut.value)
+/** 是否显示降级兜底图：额外包含上下文临时丢失 */
+const degraded = computed(() => fatal.value || store.contextLost)
 
 /** HUD 覆盖层上发生的滚轮转交给 iframe；iframe 自身的滚轮由运行时原生处理 */
 function forwardWheel(e: WheelEvent): void {
@@ -52,6 +72,49 @@ function forwardWheel(e: WheelEvent): void {
   store.wheel(e.deltaY * unit)
 }
 
+/** 双指间距（像素） */
+function touchSpan(touches: TouchList): number {
+  return Math.hypot(
+    touches[0].clientX - touches[1].clientX,
+    touches[0].clientY - touches[1].clientY,
+  )
+}
+let pinchSpan = 0
+
+/**
+ * 手指落在宿主 HUD 覆盖层（而非 iframe 场景）时的双指缩放转发。
+ * 落在 iframe 上的手势由运行时原生 pointer 事件处理，两者跨文档互斥，不会重复。
+ * 把间距比例换算成与运行时 applyWheel 等价的 delta：exp(delta * 0.00145) = 上次间距 / 当前间距。
+ */
+function onTouchStart(e: TouchEvent): void {
+  if (degraded.value || e.touches.length !== 2) return
+  // 一指按在摇杆/拇指键上、另一指落在场景：这是“走位 + 环视”，不是捏合缩放
+  const target = e.target as Element | null
+  if (target?.closest?.('.joy, .tb')) return
+  pinchSpan = touchSpan(e.touches)
+}
+function onTouchMove(e: TouchEvent): void {
+  if (degraded.value || e.touches.length !== 2 || pinchSpan <= 0) return
+  const span = touchSpan(e.touches)
+  if (span > 4) {
+    const delta = Math.log(pinchSpan / span) / 0.00145
+    pinchSpan = span
+    if (Number.isFinite(delta) && delta !== 0) {
+      e.preventDefault()
+      // 运行时的 applyWheel 把单次 delta 截断到 ±400；拆帧下发以保持与场景区捏合一致的手感
+      let remain = delta
+      while (Math.abs(remain) > 400) {
+        store.wheel(400 * Math.sign(remain))
+        remain -= 400 * Math.sign(remain)
+      }
+      if (remain !== 0) store.wheel(remain)
+    }
+  }
+}
+function onTouchEnd(e: TouchEvent): void {
+  if (e.touches.length < 2) pinchSpan = 0
+}
+
 onMounted(() => {
   try {
     const canvas = document.createElement('canvas')
@@ -60,20 +123,38 @@ onMounted(() => {
     webglOk.value = false
   }
   window.addEventListener('wheel', forwardWheel, { passive: false })
+  const stage = stageEl.value
+  if (stage) {
+    stage.addEventListener('touchstart', onTouchStart, { passive: true })
+    stage.addEventListener('touchmove', onTouchMove, { passive: false })
+    stage.addEventListener('touchend', onTouchEnd, { passive: true })
+    stage.addEventListener('touchcancel', onTouchEnd, { passive: true })
+  }
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('wheel', forwardWheel)
+  const stage = stageEl.value
+  if (stage) {
+    stage.removeEventListener('touchstart', onTouchStart)
+    stage.removeEventListener('touchmove', onTouchMove)
+    stage.removeEventListener('touchend', onTouchEnd)
+    stage.removeEventListener('touchcancel', onTouchEnd)
+  }
 })
 </script>
 
 <template>
-  <section class="stage">
+  <section class="stage" ref="stageEl">
+    <!-- 上下文临时丢失时不再把 iframe 的 display 切掉：
+         隐藏/显示跨文档 iframe 会触发整块重新合成，掉一次上下文就闪一下；
+         改为保留 iframe、在上面盖一层提示，恢复后提示消失即可。 -->
     <iframe
-      v-if="!degraded"
+      v-if="!fatal"
       ref="frame"
-      :src="runtimeUrl"
-      title="徑山萬壽禪寺 · 人物第三人稱漫游"
+      :src="inlineScene ? undefined : runtimeUrl"
+      :srcdoc="inlineScene || undefined"
+      title="径山万寿禅寺 · 人物第三人称漫游"
       allow="fullscreen"
       frameborder="0"
     />
@@ -92,18 +173,19 @@ onBeforeUnmount(() => {
 
     <div v-if="!degraded && !store.ready" class="mask">
       <div class="loader" />
-      <p>正在構建殿宇與人物…</p>
-      <small>五鳳山門 → 釋迦寶殿 → 潮音堂 → 觀音堂 → 凌霄閣</small>
+      <p>正在构建殿宇与人物…</p>
+      <small>五凤山门 → 释迦宝殿 → 潮音堂 → 观音堂 → 凌霄阁</small>
     </div>
 
     <div
       v-if="degraded"
       class="fallback"
-      :style="{ backgroundImage: 'url(/temple/fallback.png)' }"
+      :class="{ soft: !fatal }"
+      :style="{ backgroundImage: `url(${fallbackUrl})` }"
     >
       <div class="fallback-txt">
-        <strong class="serif">三維運行時不可用</strong>
-        <p>已切換為全寺俯瞰靜態圖。</p>
+        <strong class="serif">{{ fatal ? '三维运行时不可用' : '三维画面恢复中' }}</strong>
+        <p>{{ fatal ? '已切换为全寺俯瞰静态图。' : '显卡上下文暂时中断，正在自动恢复…' }}</p>
       </div>
     </div>
 
@@ -120,6 +202,8 @@ onBeforeUnmount(() => {
   height: 100%;
   overflow: hidden;
   background: #cfe3f0;
+  touch-action: none; /* 移动端：手势全部交给运行时缩放，禁用浏览器默认缩放/平移 */
+  contain: paint;     /* 把重绘范围限制在舞台内，HUD 更新不会波及页面其余部分 */
 }
 iframe {
   position: absolute;
@@ -127,6 +211,10 @@ iframe {
   width: 100%;
   height: 100%;
   border: 0;
+  /* 独立合成层 + 关闭背面绘制：避免宿主 HUD 刷新时把跨文档的 WebGL 表面
+   * 一起重绘（部分 GPU 上会表现为闪一下）。 */
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 .hall-mark {
   position: absolute;
@@ -137,7 +225,7 @@ iframe {
   padding: 3px 9px;
   border: 1px solid rgba(255, 249, 236, 0.55);
   border-radius: 999px;
-  background: rgba(43, 33, 28, 0.52);
+  background: rgba(43, 33, 28, 0.68);
   color: #fff9ec;
   font-family: var(--font-serif);
   font-size: 11px;
@@ -145,7 +233,6 @@ iframe {
   white-space: nowrap;
   pointer-events: none;
   z-index: 4;
-  backdrop-filter: blur(3px);
 }
 .hall-mark i {
   width: 5px;
@@ -204,10 +291,16 @@ iframe {
 .fallback {
   position: absolute;
   inset: 0;
+  z-index: 5;
   background-size: cover;
   background-position: center;
   display: grid;
   place-items: center;
+}
+/* 上下文临时丢失时的过渡提示：压低底图存在感，恢复后自动消失 */
+.fallback.soft {
+  background-color: rgba(207, 227, 240, 0.86);
+  background-blend-mode: screen;
 }
 .fallback-txt {
   background: rgba(255, 252, 245, 0.94);

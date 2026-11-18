@@ -39,7 +39,7 @@ const scenePath = resolve(SCENE, 'index.html')
 if (!existsSync(scenePath)) {
   // 分发包里已带生成好的运行时，允许脱离原始 3D 工程独立启动
   if (existsSync(resolve(OUT, 'index.html'))) {
-    console.log('[sync:temple] 源場景缺失，沿用已生成的 public/temple/index.html')
+    console.log('[sync:temple] 源场景缺失，沿用已生成的 public/temple/index.html')
     process.exit(0)
   }
   fail(`未找到场景文件 ${scenePath}`)

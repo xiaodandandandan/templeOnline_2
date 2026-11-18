@@ -1,16 +1,16 @@
 /**
- * 中轴殿宇领域模型，依《徑山寺遊覽全攻略》航拍标注图重排。
- * 最前方山門題「五鳳山門」，內供彌勒、韋陀，兼天王殿之制，不再另設天王殿。
+ * 中轴殿宇领域模型，依《径山寺游览全攻略》航拍标注图重排。
+ * 最前方山门题“五凤山门”，内供弥勒、韦陀，兼天王殿之制，不再另设天王殿。
  * 坐标必须与 three.js 运行时 scripts/bridge-runtime.js 的 HALLS 表保持一致：
- * 五鳳山門(0) → 釋迦寶殿(-44) → 潮音堂(-88) → 觀音堂(-132)
- * → 錦鯉池(-148) → 抬高台地(-174) → 凌霄閣(-176, +6)。
- * 中軸五殿相鄰殿距一律 44，四進配殿隨之拉長成帶，兩側不留空地；
- * 池 / 台地 / 凌霄後段保持原相對關係整體後移 47。
- * 兩側配殿依照片重做兩層樓閣並沿用天王殿配色：深栗木構、米白牆、青灰瓦，
- * 一層牆高 7.60、二層柱高 3.00、一層腰檐檐口 9.50；上層密直棂窗、無紅色欄杆
- * 與加高後的兩側連廊共用同一 SONG 標高；台上西 / 東配院同制，局部總高約 16.3。
- * 图上其余标注点（請香處 / 進口 / 出口 / 祖堂 / 五觀堂 / 藥師殿 /
- * 龍王殿·財神殿 / 錦鯉池）由 3D 侧 window.__SITE_PLAN__ 下发，避免两份几何真源。
+ * 五凤山门(0) → 释迦宝殿(-44) → 潮音堂(-88) → 观音堂(-132)
+ * → 锦鲤池(-148) → 抬高台地(-174) → 凌霄阁(-176, +6)。
+ * 中轴五殿相邻殿距一律 44，四进配殿随之拉长成带，两侧不留空地；
+ * 池 / 台地 / 凌霄后段保持原相对关系整体后移 47。
+ * 两侧配殿依照片重做两层楼阁并沿用天王殿配色：深栗木构、米白墙、青灰瓦，
+ * 一层墙高 7.60、二层柱高 3.00、一层腰檐檐口 9.50；上层密直棂窗、无红色栏杆
+ * 与加高后的两侧连廊共用同一 SONG 标高；台上西 / 东配院同制，局部总高约 16.3。
+ * 图上其余标注点（请香处 / 进口 / 出口 / 祖堂 / 五观堂 / 药师殿 /
+ * 龙王殿·财神殿 / 锦鲤池）由 3D 侧 window.__SITE_PLAN__ 下发，避免两份几何真源。
  */
 export type HallId =
   | 'tianwang'
@@ -57,26 +57,26 @@ export interface Hall {
 export const HALLS: readonly Hall[] = [
   {
     id: 'tianwang',
-    name: '五鳳山門',
+    name: '五凤山门',
     alias: '五凤山门（天王殿）',
     deity: '弥勒 · 平安喜乐 / 韦驮 · 出行平安',
     summary:
-      '全寺最前方山门，依航拍图题「五凤山门」，内供弥勒与韦驮，兼天王殿之制。门前依次设请香处香亭与进口牌坊，出门在西侧院墙。人物由殿前广场出发，可穿中门入寺。',
+      '全寺最前方山门，依航拍图题“五凤山门”，内供弥勒与韦驮，兼天王殿之制。人物由殿前广场出发，可穿中门入寺。',
     etiquette: ['由左门入、右门出，中门为尊', '入寺不踏门槛', '整衣肃容，缓步前行'],
     axisOrder: 0,
     elevated: false,
-    box: { x: 0, z: 0, baseY: 0, width: 21, depth: 12, height: 19.5 },
+    box: { x: 0, z: 0, baseY: 0, width: 26.0, depth: 14.0, height: 17.7 },
   },
   {
     id: 'shijia',
-    name: '釋迦寶殿',
+    name: '释迦宝殿',
     alias: '释迦宝殿',
     deity: '释迦牟尼 · 万事可求 / 普贤 · 事业 / 文殊 · 学业',
     summary: '全寺主殿，重檐形制、月台最宽。与前后殿各距 44 单位，左侧祖堂、五观堂，右侧东庑、客堂围合前两进院落。',
     etiquette: ['于月台中央问讯', '上香三支，不以口吹熄', '礼佛三拜后从两侧退下'],
     axisOrder: 1,
     elevated: false,
-    box: { x: 0, z: -44, baseY: 0, width: 25, depth: 12.6, height: 19 },
+    box: { x: 0, z: -44, baseY: 0, width: 29.6, depth: 18.0, height: 23.7 },
   },
   {
     id: 'chaoyin',
@@ -87,22 +87,22 @@ export const HALLS: readonly Hall[] = [
     etiquette: ['入堂静坐，不交语', '听经毕合掌问讯', '不倚靠柱槛'],
     axisOrder: 2,
     elevated: false,
-    box: { x: 0, z: -88, baseY: 0, width: 18, depth: 9.8, height: 12 },
+    box: { x: 0, z: -88, baseY: 0, width: 22.0, depth: 15.0, height: 16.0 },
   },
   {
     id: 'guanyin',
-    name: '觀音堂',
+    name: '观音堂',
     alias: '观音堂',
     deity: '观世音菩萨 · 姻缘求子',
     summary: '中轴第四进，殿前设朱墙院门，殿后即锦鲤池与跨池石桥；两侧西院、东院朝内闭合最后一进平地院落。',
     etiquette: ['祈愿文宜简净', '殿前不抛掷物品入池', '礼毕由右侧回廊退出'],
     axisOrder: 3,
     elevated: false,
-    box: { x: 0, z: -132, baseY: 0, width: 20, depth: 10.8, height: 12.8 },
+    box: { x: 0, z: -132, baseY: 0, width: 24.0, depth: 16.0, height: 16.8 },
   },
   {
     id: 'lingxiao',
-    name: '凌霄閣',
+    name: '凌霄阁',
     alias: '凌霄阁',
     deity: '凌霄阁 · 诸事顺遂',
     summary:
@@ -110,7 +110,7 @@ export const HALLS: readonly Hall[] = [
     etiquette: ['登踏道靠右缓行', '台上不奔跑、不倚栏', '回向后再下台'],
     axisOrder: 4,
     elevated: true,
-    box: { x: 0, z: -176, baseY: 6, width: 23, depth: 11.6, height: 19.5 },
+    box: { x: 0, z: -176, baseY: 6, width: 28.0, depth: 16.5, height: 24.6 },
   },
   {
     id: 'wenshu',
@@ -121,18 +121,18 @@ export const HALLS: readonly Hall[] = [
     etiquette: ['合掌问讯', '不背对主殿久立'],
     axisOrder: null,
     elevated: true,
-    box: { x: -20.5, z: -176, baseY: 6, width: 11, depth: 9, height: 16.5 },
+    box: { x: -20.5, z: -176, baseY: 6, width: 12, depth: 11, height: 16.5 },
   },
   {
     id: 'puxian',
-    name: '東配院',
+    name: '东配院',
     alias: '凌霄阁东侧配院',
     deity: '凌霄高台东侧院落',
     summary: '航拍图上凌霄阁右侧的独立院落群，与西配院同制的天王殿配色两层楼阁，密直棂格窗、无红色栏杆，构成高台四合院的横向边界。',
     etiquette: ['合掌问讯', '顺右绕行'],
     axisOrder: null,
     elevated: true,
-    box: { x: 20.5, z: -176, baseY: 6, width: 11, depth: 9, height: 16.5 },
+    box: { x: 20.5, z: -176, baseY: 6, width: 12, depth: 11, height: 16.5 },
   },
 ] as const
 
